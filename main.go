@@ -9,9 +9,10 @@ import (
 
 var upgrader = websocket.Upgrader{}
 
-type action struct {
-	Payload interface{} `json:"payload"`
-	Type    string      `json:"type"`
+// Action ...
+type Action struct {
+	Payload map[string]interface{} `json:"payload"`
+	Type    string                 `json:"type"`
 }
 
 func main() {
@@ -28,12 +29,16 @@ func echo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer conn.Close()
-	action := action{}
+	action := Action{}
 
 	for {
 		err = conn.ReadJSON(&action)
 
 		if err != nil {
+			conn.WriteJSON(Action{
+				map[string]interface{}{"code": 2001},
+				"ERROR",
+			})
 			continue
 		}
 
