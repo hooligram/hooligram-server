@@ -22,14 +22,17 @@ func main() {
 
 func echo(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
+
 	if err != nil {
 		return
 	}
 
+	defer conn.Close()
 	action := action{}
 
 	for {
 		err = conn.ReadJSON(&action)
+
 		if err != nil {
 			continue
 		}
