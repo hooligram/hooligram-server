@@ -29,9 +29,12 @@ func echo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer conn.Close()
-	action := Action{}
 
 	for {
+		action := Action{
+			Payload: map[string]interface{}{},
+			Type:    "",
+		}
 		err = conn.ReadJSON(&action)
 
 		if err != nil {
