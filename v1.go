@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -39,10 +42,64 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 		switch action.Type {
 		case "VERIFICATION_VERIFY_PHONE_NO":
-			conn.WriteJSON(Action{
-				map[string]interface{}{},
-				"VERIFICATION_VERIFICATION_CODE_SENT",
+			countryCode, ok := action.Payload["country_code"].(float64)
+
+			if !ok {
+				log.Println("country_code is required in Payload.")
+				writeError(conn, 3001)
+				break
+			}
+
+			phoneNumber, ok := action.Payload["phone_number"].(float64)
+
+			if !ok {
+				log.Println("phone_number is required in Payload.")
+				writeError(conn, 3001)
+				break
+			}
+
+			b, err := json.Marshal(map[string]interface{}{
+				"api_key":      twilioApiKey,
+				"country_code": int(countryCode),
+				"phone_number": int(phoneNumber),
+				"via":          "sms",
 			})
+
+			if err != nil {
+				log.Println(err)
+				break
+			}
+
+			resp, err := http.Post(
+				"https://api.authy.com/protected/json/phones/verification/start",
+				"application/json",
+				bytes.NewReader(b),
+			)
+
+			if err != nil {
+				log.Println(err)
+				break
+			}
+
+			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			if err != nil {
+				log.Println(err)
+				break
+			}
+
+			r := map[string]interface{}{}
+			json.Unmarshal(body, &r)
+
+			if r["success"].(bool) {
+				conn.WriteJSON(Action{
+					map[string]interface{}{},
+					"VERIFICATION_VERIFICATION_CODE_SENT",
+				})
+			} else {
+				log.Println("Failed to send verification code.")
+			}
 		default:
 			log.Println("Not supported Action Type.")
 			writeError(conn, 3002)
