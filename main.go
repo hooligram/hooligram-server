@@ -15,14 +15,6 @@ type Action struct {
 	Type    string                 `json:"type"`
 }
 
-// AddOneAction ...
-type AddOneAction struct {
-	Payload struct {
-		Count int `json:"count"`
-	} `json:"payload"`
-	Type string `json:"type"`
-}
-
 func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/addone", addOne)
@@ -32,6 +24,7 @@ func main() {
 
 func addOne(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
+
 	if err != nil {
 		return
 	}
@@ -39,12 +32,29 @@ func addOne(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	for {
-		action := AddOneAction{}
+		action := Action{}
 		err := conn.ReadJSON(&action)
+
 		if err != nil {
+			writeError(conn, 2001)
 			continue
 		}
-		action.Payload.Count++
+
+		if action.Type != "ADD_ONE" {
+			writeError(conn, 3002)
+			continue
+		}
+
+		count, ok := action.Payload["count"].(float64)
+
+		if !ok {
+			writeError(conn, 3001)
+			continue
+		}
+
+		count++
+		action.Payload["count"] = count
+
 		conn.WriteJSON(action)
 	}
 }
@@ -66,13 +76,17 @@ func echo(w http.ResponseWriter, r *http.Request) {
 		err = conn.ReadJSON(&action)
 
 		if err != nil {
-			conn.WriteJSON(Action{
-				map[string]interface{}{"code": 2001},
-				"ERROR",
-			})
+			writeError(conn, 2001)
 			continue
 		}
 
 		conn.WriteJSON(action)
 	}
+}
+
+func writeError(conn *websocket.Conn, code int) {
+	conn.WriteJSON(Action{
+		map[string]interface{}{"code": code},
+		"ERROR",
+	})
 }
