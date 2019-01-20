@@ -59,7 +59,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 			}
 
 			b, err := json.Marshal(map[string]interface{}{
-				"api_key":      twilioApiKey,
+				"api_key":      twilioAPIKey,
 				"country_code": int(countryCode),
 				"phone_number": int(phoneNumber),
 				"via":          "sms",

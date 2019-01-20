@@ -9,4 +9,4 @@
 5. `go version`
 6. `go get github.com/hooligram/hooligram-server`
 7. `cd ~/go/src/github.com/hooligram/hooligram-server`
-8. `go run main.go&`
+8. `go build && ./hooligram-server`

@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var twilioApiKey string
+var twilioAPIKey string
 var upgrader = websocket.Upgrader{}
 
 func main() {
@@ -19,9 +19,9 @@ func main() {
 		log.Fatal("PORT must be set. Exiting...")
 	}
 
-	twilioApiKey = os.Getenv("TWILIO_API_KEY")
+	twilioAPIKey = os.Getenv("TWILIO_API_KEY")
 
-	if twilioApiKey == "" {
+	if twilioAPIKey == "" {
 		log.Fatal("TWILIO_API_KEY must be set. Exiting...")
 	}
 
