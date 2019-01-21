@@ -1,92 +1,33 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
+var twilioAPIKey string
 var upgrader = websocket.Upgrader{}
 
-// Action ...
-type Action struct {
-	Payload map[string]interface{} `json:"payload"`
-	Type    string                 `json:"type"`
-}
-
 func main() {
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("PORT must be set. Exiting...")
+	}
+
+	twilioAPIKey = os.Getenv("TWILIO_API_KEY")
+
+	if twilioAPIKey == "" {
+		log.Fatal("TWILIO_API_KEY must be set. Exiting...")
+	}
+
 	router := mux.NewRouter()
-	router.HandleFunc("/addone", addOne)
+	router.HandleFunc("/addone", addone)
 	router.HandleFunc("/echo", echo)
-	http.ListenAndServe(":8080", router)
-}
-
-func addOne(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-
-	if err != nil {
-		return
-	}
-
-	defer conn.Close()
-
-	for {
-		action := Action{}
-		err := conn.ReadJSON(&action)
-
-		if err != nil {
-			writeError(conn, 2001)
-			continue
-		}
-
-		if action.Type != "ADD_ONE" {
-			writeError(conn, 3002)
-			continue
-		}
-
-		count, ok := action.Payload["count"].(float64)
-
-		if !ok {
-			writeError(conn, 3001)
-			continue
-		}
-
-		count++
-		action.Payload["count"] = count
-
-		conn.WriteJSON(action)
-	}
-}
-
-func echo(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-
-	if err != nil {
-		return
-	}
-
-	defer conn.Close()
-
-	for {
-		action := Action{
-			Payload: map[string]interface{}{},
-			Type:    "",
-		}
-		err = conn.ReadJSON(&action)
-
-		if err != nil {
-			writeError(conn, 2001)
-			continue
-		}
-
-		conn.WriteJSON(action)
-	}
-}
-
-func writeError(conn *websocket.Conn, code int) {
-	conn.WriteJSON(Action{
-		map[string]interface{}{"code": code},
-		"ERROR",
-	})
+	router.HandleFunc("/v1", v1)
+	http.ListenAndServe(":"+port, router)
 }
