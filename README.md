@@ -9,4 +9,6 @@
 5. `go version`
 6. `go get github.com/hooligram/hooligram-server`
 7. `cd ~/go/src/github.com/hooligram/hooligram-server`
-8. `go build && ./hooligram-server`
+8. `export PORT=8080`
+9. `export TWILIO_API_KEY=<twilio-verify-api-key>` - [Verify](https://www.twilio.com/verify)
+10. `go build && ./hooligram-server`
