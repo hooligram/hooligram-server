@@ -67,6 +67,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				log.Println(err)
+				writeError(conn, 5000)
 				break
 			}
 
@@ -78,6 +79,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				log.Println(err)
+				writeError(conn, 5000)
 				break
 			}
 
@@ -86,20 +88,26 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				log.Println(err)
+				writeError(conn, 5000)
 				break
 			}
 
 			r := map[string]interface{}{}
 			json.Unmarshal(body, &r)
 
-			if r["success"].(bool) {
+			if !r["success"].(bool) {
+				log.Println("Failed to send verification code.")
 				conn.WriteJSON(Action{
 					map[string]interface{}{},
-					"VERIFICATION_VERIFICATION_CODE_SENT",
+					"VERIFICATION_VERIFICATION_CODE_SENT_FAILED",
 				})
-			} else {
-				log.Println("Failed to send verification code.")
+				break
 			}
+
+			conn.WriteJSON(Action{
+				map[string]interface{}{},
+				"VERIFICATION_VERIFICATION_CODE_SENT",
+			})
 		default:
 			log.Println("Not supported Action Type.")
 			writeError(conn, 3002)
