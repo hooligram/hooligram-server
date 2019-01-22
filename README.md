@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/hooligram/hooligram-server.svg?branch=develop)](https://travis-ci.com/hooligram/hooligram-server)
+
 # Hooligram Server
 
 **Ubuntu 18 server setup**
