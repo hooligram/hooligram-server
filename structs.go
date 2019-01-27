@@ -8,6 +8,7 @@ type Action struct {
 
 // Client ...
 type Client struct {
-	CountryCode string
-	PhoneNumber string
+	CountryCode      string
+	PhoneNumber      string
+	VerificationCode string
 }

@@ -16,7 +16,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clients[conn] = Client{}
+	clients[conn] = &Client{}
 	defer conn.Close()
 
 	for {
@@ -102,7 +102,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			clients[conn] = Client{countryCode, phoneNumber}
+			clients[conn] = &Client{CountryCode: countryCode, PhoneNumber: phoneNumber}
 			conn.WriteJSON(Action{
 				map[string]interface{}{},
 				verificationRequestCodeSuccess,
@@ -136,37 +136,47 @@ func v1(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			url := "https://api.authy.com/protected/json/phones/verification/check"
-			url += "?country_code=" + client.CountryCode
-			url += "&phone_number=" + client.PhoneNumber
-			url += "&verification_code=" + code
+			if client.VerificationCode == "" {
+				url := "https://api.authy.com/protected/json/phones/verification/check"
+				url += "?country_code=" + client.CountryCode
+				url += "&phone_number=" + client.PhoneNumber
+				url += "&verification_code=" + code
 
-			req, err := http.NewRequest("GET", url, nil)
+				req, err := http.NewRequest("GET", url, nil)
 
-			if err != nil {
-				writeEmptyAction(conn, verificationSubmitCodeFailure)
-				break
-			}
+				if err != nil {
+					writeEmptyAction(conn, verificationSubmitCodeFailure)
+					break
+				}
 
-			req.Header.Add("X-Authy-API-Key", twilioAPIKey)
-			resp, err := httpClient.Do(req)
+				req.Header.Add("X-Authy-API-Key", twilioAPIKey)
+				resp, err := httpClient.Do(req)
 
-			if err != nil {
-				log.Println("Failed to send verify code.")
-				writeEmptyAction(conn, verificationSubmitCodeFailure)
-				break
-			}
+				if err != nil {
+					log.Println("Failed to send verify code.")
+					writeEmptyAction(conn, verificationSubmitCodeFailure)
+					break
+				}
 
-			body, err := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
+				body, err := ioutil.ReadAll(resp.Body)
+				resp.Body.Close()
 
-			r := map[string]interface{}{}
-			json.Unmarshal(body, &r)
+				r := map[string]interface{}{}
+				json.Unmarshal(body, &r)
 
-			if !r["success"].(bool) {
-				log.Println("Verification code is incorrect.")
-				writeEmptyAction(conn, verificationRequestCodeFailure)
-				break
+				if !r["success"].(bool) {
+					log.Println("Verification code is incorrect.")
+					writeEmptyAction(conn, verificationRequestCodeFailure)
+					break
+				}
+
+				client.VerificationCode = code
+			} else {
+				if client.VerificationCode != code {
+					log.Println("Verification code doesn't match the record.")
+					writeEmptyAction(conn, verificationRequestCodeFailure)
+					break
+				}
 			}
 
 			conn.WriteJSON(Action{
