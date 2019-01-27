@@ -8,3 +8,10 @@ func writeError(conn *websocket.Conn, code int) {
 		"ERROR",
 	})
 }
+
+func writeVerificationRequestCodeFailure(conn *websocket.Conn) {
+	conn.WriteJSON(Action{
+		map[string]interface{}{},
+		verificationRequestCodeFailure,
+	})
+}

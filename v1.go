@@ -41,12 +41,12 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		}
 
 		switch action.Type {
-		case "VERIFICATION_VERIFY_PHONE_NO":
+		case verificationRequestCodeRequest:
 			countryCode, ok := action.Payload["country_code"].(float64)
 
 			if !ok {
 				log.Println("country_code is required in Payload.")
-				writeError(conn, 3001)
+				writeVerificationRequestCodeFailure(conn)
 				break
 			}
 
@@ -54,7 +54,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if !ok {
 				log.Println("phone_number is required in Payload.")
-				writeError(conn, 3001)
+				writeVerificationRequestCodeFailure(conn)
 				break
 			}
 
@@ -67,7 +67,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				log.Println(err)
-				writeError(conn, 5000)
+				writeVerificationRequestCodeFailure(conn)
 				break
 			}
 
@@ -79,7 +79,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				log.Println(err)
-				writeError(conn, 5000)
+				writeVerificationRequestCodeFailure(conn)
 				break
 			}
 
@@ -88,7 +88,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				log.Println(err)
-				writeError(conn, 5000)
+				writeVerificationRequestCodeFailure(conn)
 				break
 			}
 
@@ -97,16 +97,13 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if !r["success"].(bool) {
 				log.Println("Failed to send verification code.")
-				conn.WriteJSON(Action{
-					map[string]interface{}{},
-					"VERIFICATION_VERIFICATION_CODE_SENT_FAILED",
-				})
+				writeVerificationRequestCodeFailure(conn)
 				break
 			}
 
 			conn.WriteJSON(Action{
 				map[string]interface{}{},
-				"VERIFICATION_VERIFICATION_CODE_SENT",
+				verificationRequestCodeSuccess,
 			})
 		default:
 			log.Println("Not supported Action Type.")
