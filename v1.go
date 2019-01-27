@@ -17,6 +17,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 	}
 
 	clients[conn] = &Client{}
+	defer delete(clients, conn)
 	defer conn.Close()
 
 	for {
