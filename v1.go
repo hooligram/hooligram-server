@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 func v1(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +43,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 		switch action.Type {
 		case verificationRequestCodeRequest:
-			countryCode, ok := action.Payload["country_code"].(float64)
+			countryCode, ok := action.Payload["country_code"].(string)
 
 			if !ok {
 				log.Println("country_code is required in Payload.")
@@ -52,7 +51,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			phoneNumber, ok := action.Payload["phone_number"].(float64)
+			phoneNumber, ok := action.Payload["phone_number"].(string)
 
 			if !ok {
 				log.Println("phone_number is required in Payload.")
@@ -62,8 +61,8 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			b, err := json.Marshal(map[string]interface{}{
 				"api_key":      twilioAPIKey,
-				"country_code": int(countryCode),
-				"phone_number": int(phoneNumber),
+				"country_code": countryCode,
+				"phone_number": phoneNumber,
 				"via":          "sms",
 			})
 
@@ -103,13 +102,13 @@ func v1(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			clients[conn] = Client{int(countryCode), int(phoneNumber)}
+			clients[conn] = Client{countryCode, phoneNumber}
 			conn.WriteJSON(Action{
 				map[string]interface{}{},
 				verificationRequestCodeSuccess,
 			})
 		case verificationSubmitCodeRequest:
-			code, ok := action.Payload["code"].(float64)
+			code, ok := action.Payload["code"].(string)
 
 			if !ok {
 				log.Println("code is required in Payload.")
@@ -125,22 +124,22 @@ func v1(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			if client.CountryCode == 0 {
+			if client.CountryCode == "" {
 				log.Println("Client's country code record is missing.")
 				writeEmptyAction(conn, verificationSubmitCodeFailure)
 				break
 			}
 
-			if client.PhoneNumber == 0 {
+			if client.PhoneNumber == "" {
 				log.Println("Client's phone number record is missing.")
 				writeEmptyAction(conn, verificationSubmitCodeFailure)
 				break
 			}
 
 			url := "https://api.authy.com/protected/json/phones/verification/check"
-			url += "?country_code=" + strconv.Itoa(client.CountryCode)
-			url += "&phone_number=" + strconv.Itoa(client.PhoneNumber)
-			url += "&verification_code=" + strconv.Itoa(int(code))
+			url += "?country_code=" + client.CountryCode
+			url += "&phone_number=" + client.PhoneNumber
+			url += "&verification_code=" + code
 
 			req, err := http.NewRequest("GET", url, nil)
 
