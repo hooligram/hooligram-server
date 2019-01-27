@@ -6,11 +6,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
-
-var twilioAPIKey string
-var upgrader = websocket.Upgrader{}
 
 func main() {
 	port := os.Getenv("PORT")

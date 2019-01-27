@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func v1(w http.ResponseWriter, r *http.Request) {
@@ -16,6 +17,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	clients[conn] = Client{}
 	defer conn.Close()
 
 	for {
@@ -46,7 +48,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if !ok {
 				log.Println("country_code is required in Payload.")
-				writeVerificationRequestCodeFailure(conn)
+				writeEmptyAction(conn, verificationRequestCodeFailure)
 				break
 			}
 
@@ -54,7 +56,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if !ok {
 				log.Println("phone_number is required in Payload.")
-				writeVerificationRequestCodeFailure(conn)
+				writeEmptyAction(conn, verificationRequestCodeFailure)
 				break
 			}
 
@@ -67,7 +69,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				log.Println(err)
-				writeVerificationRequestCodeFailure(conn)
+				writeEmptyAction(conn, verificationRequestCodeFailure)
 				break
 			}
 
@@ -79,7 +81,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				log.Println(err)
-				writeVerificationRequestCodeFailure(conn)
+				writeEmptyAction(conn, verificationRequestCodeFailure)
 				break
 			}
 
@@ -88,7 +90,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				log.Println(err)
-				writeVerificationRequestCodeFailure(conn)
+				writeEmptyAction(conn, verificationRequestCodeFailure)
 				break
 			}
 
@@ -97,13 +99,80 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 			if !r["success"].(bool) {
 				log.Println("Failed to send verification code.")
-				writeVerificationRequestCodeFailure(conn)
+				writeEmptyAction(conn, verificationRequestCodeFailure)
+				break
+			}
+
+			clients[conn] = Client{int(countryCode), int(phoneNumber)}
+			conn.WriteJSON(Action{
+				map[string]interface{}{},
+				verificationRequestCodeSuccess,
+			})
+		case verificationSubmitCodeRequest:
+			code, ok := action.Payload["code"].(float64)
+
+			if !ok {
+				log.Println("code is required in Payload.")
+				writeEmptyAction(conn, verificationSubmitCodeFailure)
+				break
+			}
+
+			client, ok := clients[conn]
+
+			if !ok {
+				log.Println("Unknown client.")
+				writeEmptyAction(conn, verificationSubmitCodeFailure)
+				break
+			}
+
+			if client.CountryCode == 0 {
+				log.Println("Client's country code record is missing.")
+				writeEmptyAction(conn, verificationSubmitCodeFailure)
+				break
+			}
+
+			if client.PhoneNumber == 0 {
+				log.Println("Client's phone number record is missing.")
+				writeEmptyAction(conn, verificationSubmitCodeFailure)
+				break
+			}
+
+			url := "https://api.authy.com/protected/json/phones/verification/check"
+			url += "?country_code=" + strconv.Itoa(client.CountryCode)
+			url += "&phone_number=" + strconv.Itoa(client.PhoneNumber)
+			url += "&verification_code=" + strconv.Itoa(int(code))
+
+			req, err := http.NewRequest("GET", url, nil)
+
+			if err != nil {
+				writeEmptyAction(conn, verificationSubmitCodeFailure)
+				break
+			}
+
+			req.Header.Add("X-Authy-API-Key", twilioAPIKey)
+			resp, err := httpClient.Do(req)
+
+			if err != nil {
+				log.Println("Failed to send verify code.")
+				writeEmptyAction(conn, verificationSubmitCodeFailure)
+				break
+			}
+
+			body, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			r := map[string]interface{}{}
+			json.Unmarshal(body, &r)
+
+			if !r["success"].(bool) {
+				log.Println("Verification code is incorrect.")
+				writeEmptyAction(conn, verificationRequestCodeFailure)
 				break
 			}
 
 			conn.WriteJSON(Action{
 				map[string]interface{}{},
-				verificationRequestCodeSuccess,
+				verificationSubmitCodeSuccess,
 			})
 		default:
 			log.Println("Not supported Action Type.")
