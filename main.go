@@ -41,7 +41,7 @@ func main() {
 		log.Fatal("Error setting up MySQL DB connection. Exiting...")
 	}
 
-	db.Close()
+	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
