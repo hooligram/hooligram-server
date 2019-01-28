@@ -104,10 +104,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 			}
 
 			clients[conn] = &Client{CountryCode: countryCode, PhoneNumber: phoneNumber}
-			conn.WriteJSON(Action{
-				map[string]interface{}{},
-				verificationRequestCodeSuccess,
-			})
+			writeEmptyAction(conn, verificationRequestCodeSuccess)
 		case verificationSubmitCodeRequest:
 			code, ok := action.Payload["code"].(string)
 
@@ -180,10 +177,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			conn.WriteJSON(Action{
-				map[string]interface{}{},
-				verificationSubmitCodeSuccess,
-			})
+			writeEmptyAction(conn, verificationSubmitCodeSuccess)
 		default:
 			log.Println("Not supported Action Type.")
 			writeError(conn, 3002)
