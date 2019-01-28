@@ -36,7 +36,9 @@ func main() {
 		log.Fatal("MYSQL_DB_NAME must be set. Exiting...")
 	}
 
-	db, err := sql.Open("mysql", mysqlUsername+":"+mysqlPassword+"@/"+mysqlDbName)
+	var err error
+
+	db, err = sql.Open("mysql", mysqlUsername+":"+mysqlPassword+"@/"+mysqlDbName)
 	if err != nil {
 		log.Fatal("Error setting up MySQL DB connection. Exiting...")
 	}
@@ -47,6 +49,16 @@ func main() {
 	if err != nil {
 		log.Fatal("Can't connect to MySQL DB. Exiting...")
 	}
+
+	db.Exec(`
+		CREATE TABLE IF NOT EXISTS client (
+			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+			country_code VARCHAR (50) NOT NULL,
+			phone_number VARCHAR (50) NOT NULL,
+			verification_code VARCHAR (50),
+			PRIMARY KEY (id)
+		)
+	`)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/addone", addone)

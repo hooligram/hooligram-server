@@ -103,7 +103,57 @@ func v1(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			clients[conn] = &Client{CountryCode: countryCode, PhoneNumber: phoneNumber}
+			log.Println("[DB] Finding client...")
+			rows, err := db.Query(`
+				SELECT *
+				FROM client
+				WHERE
+					country_code = ?
+					AND
+					phone_number = ?
+			`, countryCode, phoneNumber)
+			if err != nil {
+				log.Println("[DB] Failed to query client info from DB.")
+				writeEmptyAction(conn, verificationRequestCodeFailure)
+				break
+			}
+
+			client := &Client{}
+
+			if rows.Next() {
+				var id int
+				var countryCode string
+				var phoneNumber string
+				var verificationCode string
+				rows.Scan(&id, &countryCode, &phoneNumber, &verificationCode)
+
+				log.Printf(
+					"[DB] Retrieved client (id: %d, country_code: %s, phone_number: %s)\n",
+					id,
+					countryCode,
+					phoneNumber,
+				)
+				client.CountryCode = countryCode
+				client.PhoneNumber = phoneNumber
+			} else {
+				_, err := db.Exec(`
+					INSERT INTO client (country_code, phone_number) VALUES (?, ?)
+				`, countryCode, phoneNumber)
+				if err != nil {
+					log.Println("Failed to create client.")
+					break
+				}
+
+				log.Printf(
+					"[DB] Created client (country_code: %s, phone_number: %s)\n",
+					countryCode,
+					phoneNumber,
+				)
+				client.CountryCode = countryCode
+				client.PhoneNumber = phoneNumber
+			}
+
+			clients[conn] = client
 			writeEmptyAction(conn, verificationRequestCodeSuccess)
 		case verificationSubmitCodeRequest:
 			code, ok := action.Payload["code"].(string)
