@@ -1,8 +1,10 @@
-[![Build Status](https://travis-ci.com/hooligram/hooligram-server.svg?branch=develop)](https://travis-ci.com/hooligram/hooligram-server)
-
 # Hooligram Server
 
-**Ubuntu 18 server setup**
+[![Build Status](https://travis-ci.com/hooligram/hooligram-server.svg?branch=develop)](https://travis-ci.com/hooligram/hooligram-server)
+
+## System setup
+
+### Ubuntu 18
 
 1. `sudo apt install wget git`
 2. `wget -q https://storage.googleapis.com/golang/getgo/installer_linux`
