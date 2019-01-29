@@ -217,14 +217,21 @@ func v1(w http.ResponseWriter, r *http.Request) {
 					writeEmptyAction(conn, verificationRequestCodeFailure)
 					break
 				}
-
-				client.VerificationCode = code
 			} else {
 				if client.VerificationCode != code {
 					log.Println("Verification code doesn't match the record.")
 					writeEmptyAction(conn, verificationRequestCodeFailure)
 					break
 				}
+			}
+
+			client.VerificationCode = code
+			_, err := db.Exec(`
+				UPDATE client SET verification_code = ? WHERE country_code = ? AND phone_number = ?;
+			`, client.VerificationCode, client.CountryCode, client.PhoneNumber)
+
+			if err != nil {
+				log.Println("[DB] Can't update client's code record.")
 			}
 
 			writeEmptyAction(conn, verificationSubmitCodeSuccess)
