@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
 func v1(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +45,8 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		}
 
 		switch action.Type {
+		case authorizationSignInRequest:
+			handleAuthorizationSignInRequest(conn, &action)
 		case verificationRequestCodeRequest:
 			countryCode, ok := action.Payload["country_code"].(string)
 
@@ -240,4 +244,31 @@ func v1(w http.ResponseWriter, r *http.Request) {
 			writeError(conn, 3002)
 		}
 	}
+}
+
+func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
+	countryCode := action.Payload["country_code"].(string)
+	phoneNumber := action.Payload["phone_number"].(string)
+	verificationCode := action.Payload["code"].(string)
+
+	rows, _ := db.Query(`
+		SELECT *
+		FROM client
+		WHERE
+			country_code = ? AND phone_number = ? AND verification_code = ?;
+	`, countryCode, phoneNumber, verificationCode)
+
+	if !rows.Next() {
+		writeEmptyAction(conn, authorizationSignInFailure)
+		return
+	}
+
+	client := &Client{
+		CountryCode:      countryCode,
+		PhoneNumber:      phoneNumber,
+		VerificationCode: verificationCode,
+	}
+	clients[conn] = client
+
+	writeEmptyAction(conn, authorizationSignInSuccess)
 }
