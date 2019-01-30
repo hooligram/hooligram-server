@@ -51,3 +51,18 @@ func init() {
 		)
 	`)
 }
+
+func findClient(countryCode, phoneNumber, verificationCode string) bool {
+	rows, _ := db.Query(`
+		SELECT *
+		FROM client
+		WHERE
+			country_code = ? AND phone_number = ? AND verification_code = ?;
+	`, countryCode, phoneNumber, verificationCode)
+
+	if !rows.Next() {
+		return false
+	}
+
+	return true
+}

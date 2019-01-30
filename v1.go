@@ -63,14 +63,7 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	phoneNumber := action.Payload["phone_number"].(string)
 	verificationCode := action.Payload["code"].(string)
 
-	rows, _ := db.Query(`
-		SELECT *
-		FROM client
-		WHERE
-			country_code = ? AND phone_number = ? AND verification_code = ?;
-	`, countryCode, phoneNumber, verificationCode)
-
-	if !rows.Next() {
+	if !findClient(countryCode, phoneNumber, verificationCode) {
 		writeEmptyAction(conn, authorizationSignInFailure)
 		return
 	}
