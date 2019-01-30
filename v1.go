@@ -63,7 +63,7 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	phoneNumber := action.Payload["phone_number"].(string)
 	verificationCode := action.Payload["code"].(string)
 
-	if !findClient(countryCode, phoneNumber, verificationCode) {
+	if !findVerifiedClient(countryCode, phoneNumber, verificationCode) {
 		writeEmptyAction(conn, authorizationSignInFailure)
 		return
 	}
@@ -138,56 +138,14 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 		return
 	}
 
-	log.Println("[DB] Finding client...")
-	rows, err := db.Query(`
-		SELECT *
-		FROM client
-		WHERE
-			country_code = ?
-			AND
-			phone_number = ?
-	`, countryCode, phoneNumber)
-	if err != nil {
-		log.Println("[DB] Failed to query client info from DB.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
-		return
-	}
-
-	client := &Client{}
-
-	if rows.Next() {
-		var id int
-		var countryCode string
-		var phoneNumber string
-		var verificationCode string
-		rows.Scan(&id, &countryCode, &phoneNumber, &verificationCode)
-
-		log.Printf(
-			"[DB] Retrieved client (id: %d, country_code: %s, phone_number: %s)\n",
-			id,
-			countryCode,
-			phoneNumber,
-		)
-		client.CountryCode = countryCode
-		client.PhoneNumber = phoneNumber
-	} else {
-		_, err := db.Exec(`
-			INSERT INTO client (country_code, phone_number) VALUES (?, ?)
-		`, countryCode, phoneNumber)
-		if err != nil {
-			log.Println("Failed to create client.")
+	if !findClient(countryCode, phoneNumber) {
+		if !createClient(countryCode, phoneNumber) {
+			writeEmptyAction(conn, verificationRequestCodeFailure)
 			return
 		}
-
-		log.Printf(
-			"[DB] Created client (country_code: %s, phone_number: %s)\n",
-			countryCode,
-			phoneNumber,
-		)
-		client.CountryCode = countryCode
-		client.PhoneNumber = phoneNumber
 	}
 
+	client := &Client{countryCode, phoneNumber, ""}
 	clients[conn] = client
 	writeEmptyAction(conn, verificationRequestCodeSuccess)
 }

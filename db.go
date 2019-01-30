@@ -52,7 +52,51 @@ func init() {
 	`)
 }
 
-func findClient(countryCode, phoneNumber, verificationCode string) bool {
+func createClient(countryCode, phoneNumber string) bool {
+	_, err := db.Exec(`
+		INSERT INTO client (country_code, phone_number) VALUES (?, ?)
+	`, countryCode, phoneNumber)
+
+	if err != nil {
+		log.Println("[DB] Create client failed.")
+		return false
+	}
+
+	log.Printf(
+		"[DB] Created client (country_code: %s, phone_number: %s)\n",
+		countryCode,
+		phoneNumber,
+	)
+	return true
+}
+
+func findClient(countryCode, phoneNumber string) bool {
+	log.Println("[DB] Finding client...")
+
+	rows, err := db.Query(`
+		SELECT *
+		FROM client
+		WHERE
+			country_code = ?
+			AND
+			phone_number = ?
+	`, countryCode, phoneNumber)
+
+	if err != nil {
+		log.Println("[DB] Failed to find client.")
+		return false
+	}
+
+	if !rows.Next() {
+		log.Println("[DB] Client not found.")
+		return false
+	}
+
+	log.Println("[DB] Client found.")
+	return true
+}
+
+func findVerifiedClient(countryCode, phoneNumber, verificationCode string) bool {
 	rows, _ := db.Query(`
 		SELECT *
 		FROM client
