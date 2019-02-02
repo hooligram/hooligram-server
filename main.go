@@ -1,50 +1,34 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"os"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{}
-
-// Action ...
-type Action struct {
-	Payload map[string]interface{} `json:"payload"`
-	Type    string                 `json:"type"`
-}
-
 func main() {
+	log.Println("[MAIN] Starting...")
+	defer db.Close()
+
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("[MAIN] PORT must be set. Exiting...")
+	}
+
+	twilioAPIKey = os.Getenv("TWILIO_API_KEY")
+
+	if twilioAPIKey == "" {
+		log.Fatal("[MAIN] TWILIO_API_KEY must be set. Exiting...")
+	}
+
 	router := mux.NewRouter()
+	router.HandleFunc("/addone", addone)
 	router.HandleFunc("/echo", echo)
-	http.ListenAndServe(":8080", router)
-}
+	router.HandleFunc("/v1", v1)
 
-func echo(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-
-	if err != nil {
-		return
-	}
-
-	defer conn.Close()
-
-	for {
-		action := Action{
-			Payload: map[string]interface{}{},
-			Type:    "",
-		}
-		err = conn.ReadJSON(&action)
-
-		if err != nil {
-			conn.WriteJSON(Action{
-				map[string]interface{}{"code": 2001},
-				"ERROR",
-			})
-			continue
-		}
-
-		conn.WriteJSON(action)
-	}
+	http.ListenAndServe(":"+port, router)
 }
