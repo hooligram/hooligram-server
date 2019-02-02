@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-	log.Println("[MAIN] Starting...")
 	defer db.Close()
 
 	port := os.Getenv("PORT")

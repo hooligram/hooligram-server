@@ -7,8 +7,6 @@ import (
 )
 
 func init() {
-	log.Println("[DB] Initializing DB...")
-
 	dbUsername := os.Getenv("MYSQL_USERNAME")
 
 	if dbUsername == "" {
@@ -40,7 +38,6 @@ func init() {
 		log.Fatal("[DB] Can't connect to MySQL DB. Exiting...")
 	}
 
-	log.Println("[DB] Creating DB tables...")
 	db.Exec(`
 		CREATE TABLE IF NOT EXISTS client (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -62,17 +59,10 @@ func createClient(countryCode, phoneNumber string) bool {
 		return false
 	}
 
-	log.Printf(
-		"[DB] Created client (country_code: %s, phone_number: %s)\n",
-		countryCode,
-		phoneNumber,
-	)
 	return true
 }
 
 func findClient(countryCode, phoneNumber string) bool {
-	log.Println("[DB] Finding client...")
-
 	rows, err := db.Query(`
 		SELECT *
 		FROM client
@@ -83,26 +73,29 @@ func findClient(countryCode, phoneNumber string) bool {
 	`, countryCode, phoneNumber)
 
 	if err != nil {
-		log.Println("[DB] Failed to find client.")
+		log.Println("[DB] Find client failed.")
 		return false
 	}
 
 	if !rows.Next() {
-		log.Println("[DB] Client not found.")
 		return false
 	}
 
-	log.Println("[DB] Client found.")
 	return true
 }
 
 func findVerifiedClient(countryCode, phoneNumber, verificationCode string) bool {
-	rows, _ := db.Query(`
+	rows, err := db.Query(`
 		SELECT *
 		FROM client
 		WHERE
 			country_code = ? AND phone_number = ? AND verification_code = ?;
 	`, countryCode, phoneNumber, verificationCode)
+
+	if err != nil {
+		log.Println("[DB] Find client failed.")
+		return false
+	}
 
 	if !rows.Next() {
 		return false
