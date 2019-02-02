@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-	log.Println("[MAIN] Starting...")
 	defer db.Close()
 
 	port := os.Getenv("PORT")
@@ -26,8 +25,6 @@ func main() {
 	}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/addone", addone)
-	router.HandleFunc("/echo", echo)
 	router.HandleFunc("/v1", v1)
 
 	http.ListenAndServe(":"+port, router)

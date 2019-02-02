@@ -14,7 +14,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
-		log.Println("Can't upgrade to WebSocket connection.")
+		log.Println("[V1] Failed to upgrade to WebSocket connection.")
 		return
 	}
 
@@ -27,19 +27,17 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		err = conn.ReadJSON(&action)
 
 		if err != nil {
-			log.Println("Error reading JSON.")
+			log.Println("[V1] Error reading JSON.")
 			writeError(conn, 2001)
 			continue
 		}
 
 		if action.Type == "" {
-			log.Println("Action Type is required.")
 			writeError(conn, 3001)
 			continue
 		}
 
 		if action.Payload == nil {
-			log.Println("Action Payload is required.")
 			writeError(conn, 3001)
 			continue
 		}
@@ -52,7 +50,6 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		case verificationSubmitCodeRequest:
 			handleVerificationSubmitCodeRequest(conn, &action)
 		default:
-			log.Println("Not supported Action Type.")
 			writeError(conn, 3002)
 		}
 	}
@@ -103,7 +100,7 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 	})
 
 	if err != nil {
-		log.Println(err)
+		log.Println("[V1] Failed to encode Twilio JSON request payload.")
 		writeEmptyAction(conn, verificationRequestCodeFailure)
 		return
 	}
@@ -115,7 +112,7 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 	)
 
 	if err != nil {
-		log.Println(err)
+		log.Println("[V1] Failed to start Twilio verification API call.")
 		writeEmptyAction(conn, verificationRequestCodeFailure)
 		return
 	}
@@ -124,7 +121,7 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 	resp.Body.Close()
 
 	if err != nil {
-		log.Println(err)
+		log.Println("[V1] Failed to read Twilio API response body.")
 		writeEmptyAction(conn, verificationRequestCodeFailure)
 		return
 	}
@@ -133,7 +130,6 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 	json.Unmarshal(body, &r)
 
 	if !r["success"].(bool) {
-		log.Println("Failed to send verification code.")
 		writeEmptyAction(conn, verificationRequestCodeFailure)
 		return
 	}
@@ -154,7 +150,6 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 	code, ok := action.Payload["code"].(string)
 
 	if !ok {
-		log.Println("code is required in Payload.")
 		writeEmptyAction(conn, verificationSubmitCodeFailure)
 		return
 	}
@@ -162,19 +157,16 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 	client, ok := clients[conn]
 
 	if !ok {
-		log.Println("Unknown client.")
 		writeEmptyAction(conn, verificationSubmitCodeFailure)
 		return
 	}
 
 	if client.CountryCode == "" {
-		log.Println("Client's country code record is missing.")
 		writeEmptyAction(conn, verificationSubmitCodeFailure)
 		return
 	}
 
 	if client.PhoneNumber == "" {
-		log.Println("Client's phone number record is missing.")
 		writeEmptyAction(conn, verificationSubmitCodeFailure)
 		return
 	}
@@ -188,6 +180,7 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 		req, err := http.NewRequest("GET", url, nil)
 
 		if err != nil {
+			log.Println("[V1] Failed to make Twilio verification check request.")
 			writeEmptyAction(conn, verificationSubmitCodeFailure)
 			return
 		}
@@ -196,7 +189,7 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 		resp, err := httpClient.Do(req)
 
 		if err != nil {
-			log.Println("Failed to send verify code.")
+			log.Println("[V1] Failed to send Twilio verification check API call.")
 			writeEmptyAction(conn, verificationSubmitCodeFailure)
 			return
 		}
@@ -204,30 +197,31 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 		body, err := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 
+		if err != nil {
+			log.Println("[V1] Failed to read Twilio verification check API response.")
+			writeEmptyAction(conn, verificationSubmitCodeFailure)
+			return
+		}
+
 		r := map[string]interface{}{}
 		json.Unmarshal(body, &r)
 
 		if !r["success"].(bool) {
-			log.Println("Verification code is incorrect.")
 			writeEmptyAction(conn, verificationRequestCodeFailure)
 			return
 		}
 	} else {
 		if client.VerificationCode != code {
-			log.Println("Verification code doesn't match the record.")
 			writeEmptyAction(conn, verificationRequestCodeFailure)
 			return
 		}
 	}
 
-	client.VerificationCode = code
-	_, err := db.Exec(`
-		UPDATE client SET verification_code = ? WHERE country_code = ? AND phone_number = ?;
-	`, client.VerificationCode, client.CountryCode, client.PhoneNumber)
-
-	if err != nil {
-		log.Println("[DB] Can't update client's code record.")
+	if !updateClientVerificationCode(client, code) {
+		writeEmptyAction(conn, verificationRequestCodeFailure)
+		return
 	}
 
+	client.VerificationCode = code
 	writeEmptyAction(conn, verificationSubmitCodeSuccess)
 }
