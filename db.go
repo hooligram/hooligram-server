@@ -103,3 +103,16 @@ func findVerifiedClient(countryCode, phoneNumber, verificationCode string) bool 
 
 	return true
 }
+
+func updateClientVerificationCode(client *Client, verificationCode string) bool {
+	_, err := db.Exec(`
+		UPDATE client SET verification_code = ? WHERE country_code = ? AND phone_number = ?;
+	`, verificationCode, client.CountryCode, client.PhoneNumber)
+
+	if err != nil {
+		log.Println("[DB] Failed to update client's verification code record.")
+		return false
+	}
+
+	return true
+}

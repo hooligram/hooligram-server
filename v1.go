@@ -217,14 +217,11 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 		}
 	}
 
-	client.VerificationCode = code
-	_, err := db.Exec(`
-		UPDATE client SET verification_code = ? WHERE country_code = ? AND phone_number = ?;
-	`, client.VerificationCode, client.CountryCode, client.PhoneNumber)
-
-	if err != nil {
-		log.Println("[V1] Can't update client's code record.")
+	if !updateClientVerificationCode(client, code) {
+		writeEmptyAction(conn, verificationRequestCodeFailure)
+		return
 	}
 
+	client.VerificationCode = code
 	writeEmptyAction(conn, verificationSubmitCodeSuccess)
 }
