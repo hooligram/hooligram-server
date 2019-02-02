@@ -67,6 +67,7 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 
 	client := &Client{
 		CountryCode:      countryCode,
+		IsSignedIn:       true,
 		PhoneNumber:      phoneNumber,
 		VerificationCode: verificationCode,
 	}
@@ -141,7 +142,11 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 		}
 	}
 
-	client := &Client{countryCode, phoneNumber, ""}
+	client := &Client{
+		CountryCode:      countryCode,
+		PhoneNumber:      phoneNumber,
+		VerificationCode: "",
+	}
 	clients[conn] = client
 	writeEmptyAction(conn, verificationRequestCodeSuccess)
 }
