@@ -22,6 +22,9 @@
 
 ### MySQL DB
 
-1. `CREATE USER '<username>'@'localhost' IDENTIFIED BY '<password>';`
-2. `GRANT ALL PRIVILEGES ON hooligram.* TO '<username>'@'localhost' IDENTIFIED BY '<password>';`
-3. `CREATE DATABASE hooligram;`
+1. `sudo apt update`
+2. `sudo apt install mysql-server`
+3. `sudo systemctl status mysql` - Make sure the *Active* status is *active (running)*
+4. `CREATE USER '<username>'@'localhost' IDENTIFIED BY '<password>';`
+5. `GRANT ALL PRIVILEGES ON hooligram.* TO '<username>'@'localhost' IDENTIFIED BY '<password>';`
+6. `CREATE DATABASE hooligram;`
