@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -134,27 +133,9 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 		return
 	}
 
-	b, err := json.Marshal(map[string]interface{}{
-		"api_key":      twilioAPIKey,
-		"country_code": countryCode,
-		"phone_number": phoneNumber,
-		"via":          "sms",
-	})
+	resp := postTwilioVerificationStart(countryCode, phoneNumber)
 
-	if err != nil {
-		log.Println("[V1] Failed to encode Twilio JSON request payload.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
-		return
-	}
-
-	resp, err := http.Post(
-		"https://api.authy.com/protected/json/phones/verification/start",
-		"application/json",
-		bytes.NewReader(b),
-	)
-
-	if err != nil {
-		log.Println("[V1] Failed to start Twilio verification API call.")
+	if resp == nil {
 		writeEmptyAction(conn, verificationRequestCodeFailure)
 		return
 	}
@@ -218,24 +199,9 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 	}
 
 	if client.VerificationCode == "" {
-		url := "https://api.authy.com/protected/json/phones/verification/check"
-		url += "?country_code=" + client.CountryCode
-		url += "&phone_number=" + client.PhoneNumber
-		url += "&verification_code=" + code
+		resp := getTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, client.VerificationCode)
 
-		req, err := http.NewRequest("GET", url, nil)
-
-		if err != nil {
-			log.Println("[V1] Failed to make Twilio verification check request.")
-			writeEmptyAction(conn, verificationSubmitCodeFailure)
-			return
-		}
-
-		req.Header.Add("X-Authy-API-Key", twilioAPIKey)
-		resp, err := httpClient.Do(req)
-
-		if err != nil {
-			log.Println("[V1] Failed to send Twilio verification check API call.")
+		if resp == nil {
 			writeEmptyAction(conn, verificationSubmitCodeFailure)
 			return
 		}
