@@ -45,6 +45,8 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		switch action.Type {
 		case authorizationSignInRequest:
 			handleAuthorizationSignInRequest(conn, &action)
+		case messagingBroadcastRequest:
+			handleMessagingBroadcastRequest(conn, &action)
 		case verificationRequestCodeRequest:
 			handleVerificationRequestCodeRequest(conn, &action)
 		case verificationSubmitCodeRequest:
@@ -74,6 +76,33 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	clients[conn] = client
 
 	writeEmptyAction(conn, authorizationSignInSuccess)
+}
+
+func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
+	if _, ok := clients[conn]; !ok {
+		writeEmptyAction(conn, messagingBroadcastFailure)
+		return
+	}
+
+	if !clients[conn].IsSignedIn {
+		writeEmptyAction(conn, messagingBroadcastFailure)
+		return
+	}
+
+	sender := make(map[string]string)
+	sender["country_code"] = clients[conn].CountryCode
+	sender["phone_number"] = clients[conn].PhoneNumber
+
+	payload := make(map[string]interface{})
+	payload["message"] = action.Payload["message"]
+	payload["sender"] = sender
+
+	response := &Action{
+		Payload: payload,
+		Type:    messagingBroadcastSuccess,
+	}
+
+	broadcastChan <- response
 }
 
 func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) {

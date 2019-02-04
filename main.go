@@ -27,5 +27,21 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/v1", v1)
 
+	go broadcast()
+
 	http.ListenAndServe(":"+port, router)
+}
+
+func broadcast() {
+	for {
+		action := <-broadcastChan
+
+		for conn, client := range clients {
+			if !client.IsSignedIn {
+				continue
+			}
+
+			conn.WriteJSON(action)
+		}
+	}
 }
