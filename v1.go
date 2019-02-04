@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -29,7 +28,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("[V1] Error reading JSON.")
 			writeError(conn, 2001)
-			continue
+			break
 		}
 
 		if action.Type == "" {
@@ -45,6 +44,8 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		switch action.Type {
 		case authorizationSignInRequest:
 			handleAuthorizationSignInRequest(conn, &action)
+		case messagingBroadcastRequest:
+			handleMessagingBroadcastRequest(conn, &action)
 		case verificationRequestCodeRequest:
 			handleVerificationRequestCodeRequest(conn, &action)
 		case verificationSubmitCodeRequest:
@@ -67,12 +68,52 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 
 	client := &Client{
 		CountryCode:      countryCode,
+		IsSignedIn:       true,
 		PhoneNumber:      phoneNumber,
 		VerificationCode: verificationCode,
 	}
 	clients[conn] = client
 
+	for pendingClient := range pendingActionQueue {
+		if pendingClient.CountryCode == client.CountryCode &&
+			pendingClient.PhoneNumber == client.PhoneNumber {
+
+			for _, pendingAction := range pendingActionQueue[pendingClient] {
+				conn.WriteJSON(*pendingAction)
+			}
+
+			delete(pendingActionQueue, pendingClient)
+		}
+	}
+
 	writeEmptyAction(conn, authorizationSignInSuccess)
+}
+
+func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
+	if _, ok := clients[conn]; !ok {
+		writeEmptyAction(conn, messagingBroadcastFailure)
+		return
+	}
+
+	if !clients[conn].IsSignedIn {
+		writeEmptyAction(conn, messagingBroadcastFailure)
+		return
+	}
+
+	sender := make(map[string]string)
+	sender["country_code"] = clients[conn].CountryCode
+	sender["phone_number"] = clients[conn].PhoneNumber
+
+	payload := make(map[string]interface{})
+	payload["message"] = action.Payload["message"]
+	payload["sender"] = sender
+
+	response := &Action{
+		Payload: payload,
+		Type:    messagingBroadcastSuccess,
+	}
+
+	broadcastChan <- response
 }
 
 func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) {
@@ -92,27 +133,9 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 		return
 	}
 
-	b, err := json.Marshal(map[string]interface{}{
-		"api_key":      twilioAPIKey,
-		"country_code": countryCode,
-		"phone_number": phoneNumber,
-		"via":          "sms",
-	})
+	resp := postTwilioVerificationStart(countryCode, phoneNumber)
 
-	if err != nil {
-		log.Println("[V1] Failed to encode Twilio JSON request payload.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
-		return
-	}
-
-	resp, err := http.Post(
-		"https://api.authy.com/protected/json/phones/verification/start",
-		"application/json",
-		bytes.NewReader(b),
-	)
-
-	if err != nil {
-		log.Println("[V1] Failed to start Twilio verification API call.")
+	if resp == nil {
 		writeEmptyAction(conn, verificationRequestCodeFailure)
 		return
 	}
@@ -141,7 +164,11 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 		}
 	}
 
-	client := &Client{countryCode, phoneNumber, ""}
+	client := &Client{
+		CountryCode:      countryCode,
+		PhoneNumber:      phoneNumber,
+		VerificationCode: "",
+	}
 	clients[conn] = client
 	writeEmptyAction(conn, verificationRequestCodeSuccess)
 }
@@ -172,24 +199,9 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 	}
 
 	if client.VerificationCode == "" {
-		url := "https://api.authy.com/protected/json/phones/verification/check"
-		url += "?country_code=" + client.CountryCode
-		url += "&phone_number=" + client.PhoneNumber
-		url += "&verification_code=" + code
+		resp := getTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, client.VerificationCode)
 
-		req, err := http.NewRequest("GET", url, nil)
-
-		if err != nil {
-			log.Println("[V1] Failed to make Twilio verification check request.")
-			writeEmptyAction(conn, verificationSubmitCodeFailure)
-			return
-		}
-
-		req.Header.Add("X-Authy-API-Key", twilioAPIKey)
-		resp, err := httpClient.Do(req)
-
-		if err != nil {
-			log.Println("[V1] Failed to send Twilio verification check API call.")
+		if resp == nil {
 			writeEmptyAction(conn, verificationSubmitCodeFailure)
 			return
 		}

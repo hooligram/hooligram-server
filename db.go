@@ -62,6 +62,37 @@ func createClient(countryCode, phoneNumber string) bool {
 	return true
 }
 
+func findAllVerifiedClients() []*Client {
+	rows, err := db.Query(`
+		SELECT *
+		FROM client
+		WHERE verification_code IS NOT NULL;
+	`)
+	clients := []*Client{}
+
+	if err != nil {
+		log.Println("[DB] Failed to find all verified clients.")
+		return clients
+	}
+
+	for rows.Next() {
+		var id int
+		var countryCode string
+		var phoneNumber string
+		var verificationCode string
+		rows.Scan(&id, &countryCode, &phoneNumber, &verificationCode)
+		client := Client{
+			ID:               id,
+			CountryCode:      countryCode,
+			PhoneNumber:      phoneNumber,
+			VerificationCode: verificationCode,
+		}
+		clients = append(clients, &client)
+	}
+
+	return clients
+}
+
 func findClient(countryCode, phoneNumber string) bool {
 	rows, err := db.Query(`
 		SELECT *
