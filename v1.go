@@ -29,7 +29,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("[V1] Error reading JSON.")
 			writeError(conn, 2001)
-			continue
+			break
 		}
 
 		if action.Type == "" {
