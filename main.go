@@ -7,6 +7,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 func main() {
@@ -35,13 +36,31 @@ func main() {
 func broadcast() {
 	for {
 		action := <-broadcastChan
+		verifiedClients := findAllVerifiedClients()
 
-		for conn, client := range clients {
-			if !client.IsSignedIn {
+		for _, verifiedClient := range verifiedClients {
+			var onlineConn *websocket.Conn
+
+			for conn, client := range clients {
+				if client.CountryCode == verifiedClient.CountryCode &&
+					client.PhoneNumber == verifiedClient.PhoneNumber &&
+					client.IsSignedIn {
+					onlineConn = conn
+				}
+			}
+
+			if onlineConn == nil {
+				if _, ok := pendingActionQueue[verifiedClient]; !ok {
+					pendingActionQueue[verifiedClient] = []*Action{}
+				}
+
+				pendingActions := pendingActionQueue[verifiedClient]
+				pendingActions = append(pendingActions, action)
+				pendingActionQueue[verifiedClient] = pendingActions
 				continue
 			}
 
-			conn.WriteJSON(action)
+			onlineConn.WriteJSON(action)
 		}
 	}
 }

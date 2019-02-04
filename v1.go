@@ -75,6 +75,18 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	}
 	clients[conn] = client
 
+	for pendingClient := range pendingActionQueue {
+		if pendingClient.CountryCode == client.CountryCode &&
+			pendingClient.PhoneNumber == client.PhoneNumber {
+
+			for _, pendingAction := range pendingActionQueue[pendingClient] {
+				conn.WriteJSON(*pendingAction)
+			}
+
+			delete(pendingActionQueue, pendingClient)
+		}
+	}
+
 	writeEmptyAction(conn, authorizationSignInSuccess)
 }
 

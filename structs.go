@@ -9,6 +9,7 @@ type Action struct {
 // Client .
 type Client struct {
 	CountryCode      string
+	ID               int
 	IsSignedIn       bool
 	PhoneNumber      string
 	VerificationCode string
