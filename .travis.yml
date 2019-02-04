@@ -3,3 +3,12 @@ language: go
 go:
   - "1.11.x"
   - master
+
+before_deploy:
+  - "echo 'Before deploy.'"
+
+deploy:
+  provider: script
+  script: bash deploy.sh
+  on:
+    branch: feature/deployment
