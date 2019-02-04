@@ -25,8 +25,7 @@
 1. `sudo apt update`
 2. `sudo apt install mysql-server`
 3. `sudo systemctl status mysql` - Make sure the *Active* status is *active (running)*
-4. `sudo mysql #opens mysql console as root`
+4. `sudo mysql`
 5. `CREATE USER '<username>'@'localhost' IDENTIFIED BY '<password>';`
 6. `GRANT ALL PRIVILEGES ON hooligram.* TO '<username>'@'localhost' IDENTIFIED BY '<password>';`
 7. `CREATE DATABASE hooligram;`
-
