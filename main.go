@@ -7,10 +7,10 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 func main() {
-	log.Println("[MAIN] Starting...")
 	defer db.Close()
 
 	port := os.Getenv("PORT")
@@ -26,9 +26,41 @@ func main() {
 	}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/addone", addone)
-	router.HandleFunc("/echo", echo)
 	router.HandleFunc("/v1", v1)
 
+	go broadcast()
+
 	http.ListenAndServe(":"+port, router)
+}
+
+func broadcast() {
+	for {
+		action := <-broadcastChan
+		verifiedClients := findAllVerifiedClients()
+
+		for _, verifiedClient := range verifiedClients {
+			var onlineConn *websocket.Conn
+
+			for conn, client := range clients {
+				if client.CountryCode == verifiedClient.CountryCode &&
+					client.PhoneNumber == verifiedClient.PhoneNumber &&
+					client.IsSignedIn {
+					onlineConn = conn
+				}
+			}
+
+			if onlineConn == nil {
+				if _, ok := pendingActionQueue[verifiedClient]; !ok {
+					pendingActionQueue[verifiedClient] = []*Action{}
+				}
+
+				pendingActions := pendingActionQueue[verifiedClient]
+				pendingActions = append(pendingActions, action)
+				pendingActionQueue[verifiedClient] = pendingActions
+				continue
+			}
+
+			onlineConn.WriteJSON(action)
+		}
+	}
 }

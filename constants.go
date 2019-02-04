@@ -5,6 +5,10 @@ const (
 	authorizationSignInRequest = "AUTHORIZATION_SIGN_IN_REQUEST"
 	authorizationSignInSuccess = "AUTHORIZATION_SIGN_IN_SUCCESS"
 
+	messagingBroadcastFailure = "MESSAGING_BROADCAST_FAILURE"
+	messagingBroadcastRequest = "MESSAGING_BROADCAST_REQUEST"
+	messagingBroadcastSuccess = "MESSAGING_BROADCAST_SUCCESS"
+
 	verificationRequestCodeFailure = "VERIFICATION_REQUEST_CODE_FAILURE"
 	verificationRequestCodeRequest = "VERIFICATION_REQUEST_CODE_REQUEST"
 	verificationRequestCodeSuccess = "VERIFICATION_REQUEST_CODE_SUCCESS"
