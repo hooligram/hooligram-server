@@ -219,18 +219,18 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 		json.Unmarshal(body, &r)
 
 		if !r["success"].(bool) {
-			writeEmptyAction(conn, verificationRequestCodeFailure)
+			writeEmptyAction(conn, verificationSubmitCodeFailure)
 			return
 		}
 	} else {
 		if client.VerificationCode != code {
-			writeEmptyAction(conn, verificationRequestCodeFailure)
+			writeEmptyAction(conn, verificationSubmitCodeFailure)
 			return
 		}
 	}
 
 	if !updateClientVerificationCode(client, code) {
-		writeEmptyAction(conn, verificationRequestCodeFailure)
+		writeEmptyAction(conn, verificationSubmitCodeFailure)
 		return
 	}
 
