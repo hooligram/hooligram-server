@@ -133,9 +133,9 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 		return
 	}
 
-	resp := postTwilioVerificationStart(countryCode, phoneNumber)
+	resp, err := postTwilioVerificationStart(countryCode, phoneNumber)
 
-	if resp == nil {
+	if err != nil {
 		writeEmptyAction(conn, verificationRequestCodeFailure)
 		return
 	}
@@ -150,15 +150,23 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 	}
 
 	r := map[string]interface{}{}
-	json.Unmarshal(body, &r)
+	err = json.Unmarshal(body, &r)
+
+	if err != nil {
+		log.Println("[V1] Failed to parse Twilio verification start response body JSON.")
+		writeEmptyAction(conn, verificationRequestCodeFailure)
+		return
+	}
 
 	if !r["success"].(bool) {
+		log.Println("[V1] Twilio verification start API call failed.")
 		writeEmptyAction(conn, verificationRequestCodeFailure)
 		return
 	}
 
 	if !findClient(countryCode, phoneNumber) {
 		if !createClient(countryCode, phoneNumber) {
+			log.Println("[V1] Failed to create client.")
 			writeEmptyAction(conn, verificationRequestCodeFailure)
 			return
 		}
@@ -169,6 +177,7 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 		PhoneNumber:      phoneNumber,
 		VerificationCode: "",
 	}
+	updateClientVerificationCode(client, client.VerificationCode)
 	clients[conn] = client
 	writeEmptyAction(conn, verificationRequestCodeSuccess)
 }
