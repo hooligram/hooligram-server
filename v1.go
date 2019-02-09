@@ -208,7 +208,7 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 	}
 
 	if client.VerificationCode == "" {
-		resp := getTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, client.VerificationCode)
+		resp := getTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, code)
 
 		if resp == nil {
 			writeEmptyAction(conn, verificationSubmitCodeFailure)
@@ -225,24 +225,34 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 		}
 
 		r := map[string]interface{}{}
-		json.Unmarshal(body, &r)
+		err = json.Unmarshal(body, &r)
+
+		if err != nil {
+			log.Println("[V1] Failed to parse Twilio verification check response body JSON.")
+			writeEmptyAction(conn, verificationSubmitCodeFailure)
+			return
+		}
 
 		if !r["success"].(bool) {
+			log.Println("[V1] Twilio verification check failed.")
 			writeEmptyAction(conn, verificationSubmitCodeFailure)
 			return
 		}
+
+		if !updateClientVerificationCode(client, code) {
+			log.Println("[V1] Failed to update verification code.")
+			writeEmptyAction(conn, verificationSubmitCodeFailure)
+			return
+		}
+
+		client.VerificationCode = code
 	} else {
 		if client.VerificationCode != code {
+			log.Println("[V1] Verification code doesn't match.")
 			writeEmptyAction(conn, verificationSubmitCodeFailure)
 			return
 		}
 	}
 
-	if !updateClientVerificationCode(client, code) {
-		writeEmptyAction(conn, verificationSubmitCodeFailure)
-		return
-	}
-
-	client.VerificationCode = code
 	writeEmptyAction(conn, verificationSubmitCodeSuccess)
 }
