@@ -60,18 +60,15 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	countryCode := action.Payload["country_code"].(string)
 	phoneNumber := action.Payload["phone_number"].(string)
 	verificationCode := action.Payload["code"].(string)
+	client, ok := findVerifiedClient(countryCode, phoneNumber, verificationCode)
 
-	if !findVerifiedClient(countryCode, phoneNumber, verificationCode) {
-		writeEmptyAction(conn, authorizationSignInFailure)
+	if !ok {
+		log.Println("[V1] Couldn't find such client.")
+		writeFailure(conn, authorizationSignInFailure, []string{"couldn't find you"})
 		return
 	}
 
-	client := &Client{
-		CountryCode:      countryCode,
-		IsSignedIn:       true,
-		PhoneNumber:      phoneNumber,
-		VerificationCode: verificationCode,
-	}
+	client.IsSignedIn = true
 	clients[conn] = client
 
 	for pendingClient := range pendingActionQueue {

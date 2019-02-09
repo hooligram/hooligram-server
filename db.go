@@ -115,7 +115,7 @@ func findClient(countryCode, phoneNumber string) bool {
 	return true
 }
 
-func findVerifiedClient(countryCode, phoneNumber, verificationCode string) bool {
+func findVerifiedClient(countryCode, phoneNumber, verificationCode string) (*Client, bool) {
 	rows, err := db.Query(`
 		SELECT *
 		FROM client
@@ -125,14 +125,24 @@ func findVerifiedClient(countryCode, phoneNumber, verificationCode string) bool 
 
 	if err != nil {
 		log.Println("[DB] Find client failed.")
-		return false
+		return nil, false
 	}
 
 	if !rows.Next() {
-		return false
+		log.Println("[DB] Couldn't find such client.")
+		return nil, false
 	}
 
-	return true
+	var id int
+	rows.Scan(&id)
+	client := Client{
+		CountryCode:      countryCode,
+		ID:               id,
+		PhoneNumber:      phoneNumber,
+		VerificationCode: verificationCode,
+	}
+
+	return &client, true
 }
 
 func updateClientVerificationCode(client *Client, verificationCode string) bool {
