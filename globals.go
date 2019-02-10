@@ -44,8 +44,9 @@ func writeQueuedActions(client *Client) {
 		isCurrentClient := countryCodeMatch && phoneNumberMatch
 
 		if isCurrentClient {
-			for _, pendingAction := range pendingActionQueue[pendingClient] {
-				client.writeJSON(pendingAction)
+			queueLen := len(pendingActionQueue[pendingClient])
+			for i := queueLen - 1; i >= 0; i-- {
+				client.writeJSON(pendingActionQueue[pendingClient][i])
 			}
 
 			delete(pendingActionQueue, pendingClient)
