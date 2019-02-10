@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"os"
 )
@@ -49,17 +50,28 @@ func init() {
 	`)
 }
 
-func createClient(countryCode, phoneNumber string) bool {
+func getOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
+	client, ok := findClient(countryCode, phoneNumber)
+
+	if ok {
+		return client, nil
+	}
+
 	_, err := db.Exec(`
 		INSERT INTO client (country_code, phone_number) VALUES (?, ?)
 	`, countryCode, phoneNumber)
 
 	if err != nil {
-		log.Println("[DB] Create client failed.")
-		return false
+		return nil, errors.New("i failed to create the client")
 	}
 
-	return true
+	client, ok = findClient(countryCode, phoneNumber)
+
+	if !ok {
+		return nil, errors.New("i failed to find the created client")
+	}
+
+	return client, nil
 }
 
 func findAllVerifiedClients() []*Client {
@@ -93,7 +105,7 @@ func findAllVerifiedClients() []*Client {
 	return clients
 }
 
-func findClient(countryCode, phoneNumber string) bool {
+func findClient(countryCode, phoneNumber string) (*Client, bool) {
 	rows, err := db.Query(`
 		SELECT *
 		FROM client
@@ -104,15 +116,27 @@ func findClient(countryCode, phoneNumber string) bool {
 	`, countryCode, phoneNumber)
 
 	if err != nil {
-		log.Println("[DB] Find client failed.")
-		return false
+		log.Println("[DB] i failed to find the client")
+		log.Println("[DB]", err.Error())
+		return nil, false
 	}
 
 	if !rows.Next() {
-		return false
+		return nil, false
 	}
 
-	return true
+	var id int
+	var verificationCode string
+	rows.Scan(&id, nil, nil, &verificationCode)
+
+	client := &Client{
+		ID:               id,
+		CountryCode:      countryCode,
+		PhoneNumber:      phoneNumber,
+		VerificationCode: verificationCode,
+	}
+
+	return client, true
 }
 
 func findVerifiedClient(countryCode, phoneNumber, verificationCode string) (*Client, bool) {
@@ -145,15 +169,14 @@ func findVerifiedClient(countryCode, phoneNumber, verificationCode string) (*Cli
 	return &client, true
 }
 
-func updateClientVerificationCode(client *Client, verificationCode string) bool {
+func updateClientVerificationCode(client *Client, verificationCode string) error {
 	_, err := db.Exec(`
 		UPDATE client SET verification_code = ? WHERE country_code = ? AND phone_number = ?;
 	`, verificationCode, client.CountryCode, client.PhoneNumber)
 
 	if err != nil {
-		log.Println("[DB] Failed to update client's verification code record.")
-		return false
+		return err
 	}
 
-	return true
+	return nil
 }
