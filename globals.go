@@ -16,11 +16,21 @@ var pendingActionQueue = make(map[*Client][]*Action)
 var twilioAPIKey string
 var upgrader = websocket.Upgrader{}
 
-func getSignedInClient(conn *websocket.Conn) (*Client, error) {
+func getClient(conn *websocket.Conn) (*Client, error) {
 	client, ok := clients[conn]
 
 	if !ok {
 		return nil, errors.New("i couldn't find you")
+	}
+
+	return client, nil
+}
+
+func getSignedInClient(conn *websocket.Conn) (*Client, error) {
+	client, err := getClient(conn)
+
+	if err != nil {
+		return nil, err
 	}
 
 	if !client.IsSignedIn {
@@ -52,13 +62,18 @@ func signOut(conn *websocket.Conn) {
 }
 
 func unverifyClient(client *Client, conn *websocket.Conn) error {
-	err := updateClientVerificationCode(client, "")
+	return verifyClient(client, conn, "")
+}
+
+func verifyClient(client *Client, conn *websocket.Conn, verificationCode string) error {
+	err := updateClientVerificationCode(client, verificationCode)
 
 	if err != nil {
 		delete(clients, conn)
 		return err
 	}
 
+	client.VerificationCode = verificationCode
 	client.conn = conn
 	clients[conn] = client
 	return nil

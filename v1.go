@@ -161,35 +161,29 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 }
 
 func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
+	var errors []string
 	code, ok := action.Payload["code"].(string)
 
 	if !ok {
-		writeEmptyAction(conn, verificationSubmitCodeFailure)
+		errors = append(errors, "you need to include code in payload")
+		writeFailure(conn, verificationSubmitCodeFailure, errors)
 		return
 	}
 
-	client, ok := clients[conn]
+	client, err := getClient(conn)
 
-	if !ok {
-		writeEmptyAction(conn, verificationSubmitCodeFailure)
+	if err != nil {
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationSubmitCodeFailure, errors)
 		return
 	}
 
-	if client.CountryCode == "" {
-		writeEmptyAction(conn, verificationSubmitCodeFailure)
-		return
-	}
+	if !client.isVerified() {
+		resp, err := getTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, code)
 
-	if client.PhoneNumber == "" {
-		writeEmptyAction(conn, verificationSubmitCodeFailure)
-		return
-	}
-
-	if client.VerificationCode == "" {
-		resp := getTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, code)
-
-		if resp == nil {
-			writeEmptyAction(conn, verificationSubmitCodeFailure)
+		if err != nil {
+			errors = append(errors, err.Error())
+			client.writeFailure(verificationSubmitCodeFailure, errors)
 			return
 		}
 
@@ -197,8 +191,8 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 		resp.Body.Close()
 
 		if err != nil {
-			log.Println("[V1] Failed to read Twilio verification check API response.")
-			writeEmptyAction(conn, verificationSubmitCodeFailure)
+			errors = append(errors, err.Error())
+			client.writeFailure(verificationSubmitCodeFailure, errors)
 			return
 		}
 
@@ -206,31 +200,26 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 		err = json.Unmarshal(body, &r)
 
 		if err != nil {
-			log.Println("[V1] Failed to parse Twilio verification check response body JSON.")
-			writeEmptyAction(conn, verificationSubmitCodeFailure)
+			errors = append(errors, err.Error())
+			client.writeFailure(verificationSubmitCodeFailure, errors)
 			return
 		}
 
 		if !r["success"].(bool) {
-			log.Println("[V1] Twilio verification check failed.")
-			writeEmptyAction(conn, verificationSubmitCodeFailure)
+			unverifyClient(client, conn)
+			errors = append(errors, "twilio verification check failed")
+			client.writeFailure(verificationSubmitCodeFailure, errors)
 			return
 		}
-
-		if !updateClientVerificationCode(client, code) {
-			log.Println("[V1] Failed to update verification code.")
-			writeEmptyAction(conn, verificationSubmitCodeFailure)
-			return
-		}
-
-		client.VerificationCode = code
 	} else {
 		if client.VerificationCode != code {
-			log.Println("[V1] Verification code doesn't match.")
-			writeEmptyAction(conn, verificationSubmitCodeFailure)
+			unverifyClient(client, conn)
+			errors = append(errors, "verification code doesn't match")
+			client.writeFailure(verificationSubmitCodeFailure, errors)
 			return
 		}
 	}
 
+	verifyClient(client, conn, code)
 	writeEmptyAction(conn, verificationSubmitCodeSuccess)
 }
