@@ -1,5 +1,7 @@
 package main
 
+import "github.com/gorilla/websocket"
+
 // Action .
 type Action struct {
 	Payload map[string]interface{} `json:"payload"`
@@ -8,9 +10,11 @@ type Action struct {
 
 // Client .
 type Client struct {
-	CountryCode      string
 	ID               int
-	IsSignedIn       bool
+	CountryCode      string
 	PhoneNumber      string
 	VerificationCode string
+
+	IsSignedIn bool
+	conn       *websocket.Conn
 }
