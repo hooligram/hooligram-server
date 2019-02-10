@@ -87,19 +87,20 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 }
 
 func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
-	if _, ok := clients[conn]; !ok {
-		writeEmptyAction(conn, messagingBroadcastFailure)
+	client, ok := clients[conn]
+
+	if !ok {
 		return
 	}
 
-	if !clients[conn].IsSignedIn {
-		writeEmptyAction(conn, messagingBroadcastFailure)
+	if !client.IsSignedIn {
+		client.writeEmptyAction(messagingBroadcastFailure)
 		return
 	}
 
 	sender := make(map[string]string)
-	sender["country_code"] = clients[conn].CountryCode
-	sender["phone_number"] = clients[conn].PhoneNumber
+	sender["country_code"] = client.CountryCode
+	sender["phone_number"] = client.PhoneNumber
 
 	payload := make(map[string]interface{})
 	payload["message"] = action.Payload["message"]
