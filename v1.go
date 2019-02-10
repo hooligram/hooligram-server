@@ -60,83 +60,61 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	countryCode := action.Payload["country_code"].(string)
 	phoneNumber := action.Payload["phone_number"].(string)
 	verificationCode := action.Payload["code"].(string)
+	client, err := signIn(conn, countryCode, phoneNumber, verificationCode)
 
-	if !findVerifiedClient(countryCode, phoneNumber, verificationCode) {
-		writeEmptyAction(conn, authorizationSignInFailure)
+	if err != nil {
+		log.Println("[V1] Couldn't sign in client.")
+		log.Println("[V1]", err.Error())
+		writeFailure(conn, authorizationSignInFailure, []string{"couldn't sign in you"})
 		return
 	}
 
-	client := &Client{
-		CountryCode:      countryCode,
-		IsSignedIn:       true,
-		PhoneNumber:      phoneNumber,
-		VerificationCode: verificationCode,
-	}
-	clients[conn] = client
-
-	for pendingClient := range pendingActionQueue {
-		if pendingClient.CountryCode == client.CountryCode &&
-			pendingClient.PhoneNumber == client.PhoneNumber {
-
-			for _, pendingAction := range pendingActionQueue[pendingClient] {
-				conn.WriteJSON(*pendingAction)
-			}
-
-			delete(pendingActionQueue, pendingClient)
-		}
-	}
-
-	writeEmptyAction(conn, authorizationSignInSuccess)
+	writeQueuedActions(client)
+	client.writeEmptyAction(authorizationSignInSuccess)
 }
 
 func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
-	if _, ok := clients[conn]; !ok {
-		writeEmptyAction(conn, messagingBroadcastFailure)
+	client, err := getSignedInClient(conn)
+
+	if err != nil {
+		client.writeFailure(messagingBroadcastFailure, []string{err.Error()})
 		return
 	}
 
-	if !clients[conn].IsSignedIn {
-		writeEmptyAction(conn, messagingBroadcastFailure)
+	message, ok := action.Payload["message"].(string)
+
+	if !ok {
+		client.writeFailure(messagingBroadcastFailure, []string{"you forgot your message"})
 		return
 	}
 
-	sender := make(map[string]string)
-	sender["country_code"] = clients[conn].CountryCode
-	sender["phone_number"] = clients[conn].PhoneNumber
-
-	payload := make(map[string]interface{})
-	payload["message"] = action.Payload["message"]
-	payload["sender"] = sender
-
-	response := &Action{
-		Payload: payload,
-		Type:    messagingBroadcastSuccess,
-	}
-
-	broadcastChan <- response
+	broadcastChan <- constructBroadcastAction(client, message)
 }
 
 func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) {
+	errors := []string{}
 	countryCode, ok := action.Payload["country_code"].(string)
 
 	if !ok {
-		log.Println("country_code is required in Payload.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
-		return
+		errors = append(errors, "you need to include country_code in payload")
 	}
 
 	phoneNumber, ok := action.Payload["phone_number"].(string)
 
 	if !ok {
-		log.Println("phone_number is required in Payload.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
+		errors = append(errors, "you need to include phone_number in payload")
+	}
+
+	if len(errors) > 0 {
+		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
-	resp := postTwilioVerificationStart(countryCode, phoneNumber)
+	resp, err := postTwilioVerificationStart(countryCode, phoneNumber)
 
-	if resp == nil {
-		writeEmptyAction(conn, verificationRequestCodeFailure)
+	if err != nil {
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
@@ -144,65 +122,68 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 	resp.Body.Close()
 
 	if err != nil {
-		log.Println("[V1] Failed to read Twilio API response body.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
 	r := map[string]interface{}{}
-	json.Unmarshal(body, &r)
+	err = json.Unmarshal(body, &r)
 
-	if !r["success"].(bool) {
-		writeEmptyAction(conn, verificationRequestCodeFailure)
+	if err != nil {
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
-	if !findClient(countryCode, phoneNumber) {
-		if !createClient(countryCode, phoneNumber) {
-			writeEmptyAction(conn, verificationRequestCodeFailure)
-			return
-		}
+	if !r["success"].(bool) {
+		errors = append(errors, "i failed to make verification start api call")
+		writeFailure(conn, verificationRequestCodeFailure, errors)
+		return
 	}
 
-	client := &Client{
-		CountryCode:      countryCode,
-		PhoneNumber:      phoneNumber,
-		VerificationCode: "",
+	client, err := getOrCreateClient(countryCode, phoneNumber)
+
+	if err != nil {
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationRequestCodeFailure, errors)
+		return
 	}
-	clients[conn] = client
+
+	err = unverifyClient(client, conn)
+
+	if err != nil {
+		writeFailure(conn, verificationRequestCodeFailure, []string{err.Error()})
+		return
+	}
+
 	writeEmptyAction(conn, verificationRequestCodeSuccess)
 }
 
 func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
+	var errors []string
 	code, ok := action.Payload["code"].(string)
 
 	if !ok {
-		writeEmptyAction(conn, verificationSubmitCodeFailure)
+		errors = append(errors, "you need to include code in payload")
+		writeFailure(conn, verificationSubmitCodeFailure, errors)
 		return
 	}
 
-	client, ok := clients[conn]
+	client, err := getClient(conn)
 
-	if !ok {
-		writeEmptyAction(conn, verificationSubmitCodeFailure)
+	if err != nil {
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationSubmitCodeFailure, errors)
 		return
 	}
 
-	if client.CountryCode == "" {
-		writeEmptyAction(conn, verificationSubmitCodeFailure)
-		return
-	}
+	if !client.isVerified() {
+		resp, err := getTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, code)
 
-	if client.PhoneNumber == "" {
-		writeEmptyAction(conn, verificationSubmitCodeFailure)
-		return
-	}
-
-	if client.VerificationCode == "" {
-		resp := getTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, client.VerificationCode)
-
-		if resp == nil {
-			writeEmptyAction(conn, verificationSubmitCodeFailure)
+		if err != nil {
+			errors = append(errors, err.Error())
+			client.writeFailure(verificationSubmitCodeFailure, errors)
 			return
 		}
 
@@ -210,30 +191,35 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 		resp.Body.Close()
 
 		if err != nil {
-			log.Println("[V1] Failed to read Twilio verification check API response.")
-			writeEmptyAction(conn, verificationSubmitCodeFailure)
+			errors = append(errors, err.Error())
+			client.writeFailure(verificationSubmitCodeFailure, errors)
 			return
 		}
 
 		r := map[string]interface{}{}
-		json.Unmarshal(body, &r)
+		err = json.Unmarshal(body, &r)
+
+		if err != nil {
+			errors = append(errors, err.Error())
+			client.writeFailure(verificationSubmitCodeFailure, errors)
+			return
+		}
 
 		if !r["success"].(bool) {
-			writeEmptyAction(conn, verificationRequestCodeFailure)
+			unverifyClient(client, conn)
+			errors = append(errors, "twilio verification check failed")
+			client.writeFailure(verificationSubmitCodeFailure, errors)
 			return
 		}
 	} else {
 		if client.VerificationCode != code {
-			writeEmptyAction(conn, verificationRequestCodeFailure)
+			unverifyClient(client, conn)
+			errors = append(errors, "verification code doesn't match")
+			client.writeFailure(verificationSubmitCodeFailure, errors)
 			return
 		}
 	}
 
-	if !updateClientVerificationCode(client, code) {
-		writeEmptyAction(conn, verificationRequestCodeFailure)
-		return
-	}
-
-	client.VerificationCode = code
+	verifyClient(client, conn, code)
 	writeEmptyAction(conn, verificationSubmitCodeSuccess)
 }
