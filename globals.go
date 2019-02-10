@@ -16,6 +16,20 @@ var pendingActionQueue = make(map[*Client][]*Action)
 var twilioAPIKey string
 var upgrader = websocket.Upgrader{}
 
+func getSignedInClient(conn *websocket.Conn) (*Client, error) {
+	client, ok := clients[conn]
+
+	if !ok {
+		return nil, errors.New("i couldn't find you")
+	}
+
+	if !client.IsSignedIn {
+		return nil, errors.New("you need to sign in first")
+	}
+
+	return client, nil
+}
+
 func signIn(
 	conn *websocket.Conn,
 	countryCode, phoneNumber, verificationCode string,

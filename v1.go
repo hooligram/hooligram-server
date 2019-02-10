@@ -74,31 +74,21 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 }
 
 func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
-	client, ok := clients[conn]
+	client, err := getSignedInClient(conn)
+
+	if err != nil {
+		client.writeFailure(messagingBroadcastFailure, []string{err.Error()})
+		return
+	}
+
+	message, ok := action.Payload["message"].(string)
 
 	if !ok {
+		client.writeFailure(messagingBroadcastFailure, []string{"you forgot your message"})
 		return
 	}
 
-	if !client.IsSignedIn {
-		client.writeEmptyAction(messagingBroadcastFailure)
-		return
-	}
-
-	sender := make(map[string]string)
-	sender["country_code"] = client.CountryCode
-	sender["phone_number"] = client.PhoneNumber
-
-	payload := make(map[string]interface{})
-	payload["message"] = action.Payload["message"]
-	payload["sender"] = sender
-
-	response := &Action{
-		Payload: payload,
-		Type:    messagingBroadcastSuccess,
-	}
-
-	broadcastChan <- response
+	broadcastChan <- constructBroadcastAction(client, message)
 }
 
 func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) {
