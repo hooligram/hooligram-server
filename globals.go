@@ -51,6 +51,19 @@ func signOut(conn *websocket.Conn) {
 	delete(clients, conn)
 }
 
+func unverifyClient(client *Client, conn *websocket.Conn) error {
+	err := updateClientVerificationCode(client, "")
+
+	if err != nil {
+		delete(clients, conn)
+		return err
+	}
+
+	client.conn = conn
+	clients[conn] = client
+	return nil
+}
+
 func writeQueuedActions(client *Client) {
 	for pendingClient := range pendingActionQueue {
 		countryCodeMatch := pendingClient.CountryCode == client.CountryCode

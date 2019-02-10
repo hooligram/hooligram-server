@@ -142,19 +142,21 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 		return
 	}
 
-	if !findClient(countryCode, phoneNumber) && !createClient(countryCode, phoneNumber) {
-		errors = append(errors, "i failed to create you!")
+	client, err := getOrCreateClient(countryCode, phoneNumber)
+
+	if err != nil {
+		errors = append(errors, err.Error())
 		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
-	client := &Client{
-		CountryCode:      countryCode,
-		PhoneNumber:      phoneNumber,
-		VerificationCode: "",
+	err = unverifyClient(client, conn)
+
+	if err != nil {
+		writeFailure(conn, verificationRequestCodeFailure, []string{err.Error()})
+		return
 	}
-	updateClientVerificationCode(client, client.VerificationCode)
-	clients[conn] = client
+
 	writeEmptyAction(conn, verificationRequestCodeSuccess)
 }
 
