@@ -1,5 +1,9 @@
 package main
 
+func (client *Client) isVerified() bool {
+	return client.VerificationCode != ""
+}
+
 func (client *Client) writeEmptyAction(actionType string) {
 	writeEmptyAction(client.conn, actionType)
 }

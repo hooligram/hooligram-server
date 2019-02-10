@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func getTwilioVerificationCheck(countryCode, phoneNumber, verificationCode string) *http.Response {
+func getTwilioVerificationCheck(countryCode, phoneNumber, verificationCode string) (*http.Response, error) {
 	url := "https://api.authy.com/protected/json/phones/verification/check"
 	url += "?country_code=" + countryCode
 	url += "&phone_number=" + phoneNumber
@@ -16,19 +16,17 @@ func getTwilioVerificationCheck(countryCode, phoneNumber, verificationCode strin
 	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
-		log.Println("[API] Failed to make Twilio verification check request.")
-		return nil
+		return nil, err
 	}
 
 	req.Header.Add("X-Authy-API-Key", twilioAPIKey)
 	resp, err := httpClient.Do(req)
 
 	if err != nil {
-		log.Println("[API] Failed to read Twilio verification check API response.")
-		return nil
+		return nil, err
 	}
 
-	return resp
+	return resp, nil
 }
 
 func postTwilioVerificationStart(countryCode, phoneNumber string) (*http.Response, error) {
