@@ -36,3 +36,19 @@ func signIn(
 func signOut(conn *websocket.Conn) {
 	delete(clients, conn)
 }
+
+func writeQueuedActions(client *Client) {
+	for pendingClient := range pendingActionQueue {
+		countryCodeMatch := pendingClient.CountryCode == client.CountryCode
+		phoneNumberMatch := pendingClient.PhoneNumber == client.PhoneNumber
+		isCurrentClient := countryCodeMatch && phoneNumberMatch
+
+		if isCurrentClient {
+			for _, pendingAction := range pendingActionQueue[pendingClient] {
+				client.writeJSON(pendingAction)
+			}
+
+			delete(pendingActionQueue, pendingClient)
+		}
+	}
+}
