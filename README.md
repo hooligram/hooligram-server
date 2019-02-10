@@ -29,3 +29,10 @@
 5. `CREATE USER '<username>'@'localhost' IDENTIFIED BY '<password>';`
 6. `GRANT ALL PRIVILEGES ON hooligram.* TO '<username>'@'localhost' IDENTIFIED BY '<password>';`
 7. `CREATE DATABASE hooligram;`
+
+## Deployment
+
+1. Setup AWS EC2 instance (Ubuntu 18)
+2. Copy `hooligram-developer.pem` to project *root*
+3. `export IP_ADDR=<aws-ec2-ip-address>`
+4. `./deploy.sh`
