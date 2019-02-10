@@ -60,30 +60,30 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	countryCode := action.Payload["country_code"].(string)
 	phoneNumber := action.Payload["phone_number"].(string)
 	verificationCode := action.Payload["code"].(string)
-	client, ok := findVerifiedClient(countryCode, phoneNumber, verificationCode)
+	client, err := signIn(conn, countryCode, phoneNumber, verificationCode)
 
-	if !ok {
-		log.Println("[V1] Couldn't find such client.")
-		writeFailure(conn, authorizationSignInFailure, []string{"couldn't find you"})
+	if err != nil {
+		log.Println("[V1] Couldn't sign in client.")
+		log.Println("[V1]", err.Error())
+		writeFailure(conn, authorizationSignInFailure, []string{"couldn't sign in you"})
 		return
 	}
 
-	client.IsSignedIn = true
-	clients[conn] = client
-
 	for pendingClient := range pendingActionQueue {
-		if pendingClient.CountryCode == client.CountryCode &&
-			pendingClient.PhoneNumber == client.PhoneNumber {
+		countryCodeMatch := pendingClient.CountryCode == client.CountryCode
+		phoneNumberMatch := pendingClient.PhoneNumber == client.PhoneNumber
+		isCurrentClient := countryCodeMatch && phoneNumberMatch
 
+		if isCurrentClient {
 			for _, pendingAction := range pendingActionQueue[pendingClient] {
-				conn.WriteJSON(*pendingAction)
+				client.writeJSON(pendingAction)
 			}
 
 			delete(pendingActionQueue, pendingClient)
 		}
 	}
 
-	writeEmptyAction(conn, authorizationSignInSuccess)
+	client.writeEmptyAction(authorizationSignInSuccess)
 }
 
 func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
