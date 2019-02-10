@@ -92,26 +92,29 @@ func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
 }
 
 func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) {
+	errors := []string{}
 	countryCode, ok := action.Payload["country_code"].(string)
 
 	if !ok {
-		log.Println("country_code is required in Payload.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
-		return
+		errors = append(errors, "you need to include country_code in payload")
 	}
 
 	phoneNumber, ok := action.Payload["phone_number"].(string)
 
 	if !ok {
-		log.Println("phone_number is required in Payload.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
+		errors = append(errors, "you need to include phone_number in payload")
+	}
+
+	if len(errors) > 0 {
+		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
 	resp, err := postTwilioVerificationStart(countryCode, phoneNumber)
 
 	if err != nil {
-		writeEmptyAction(conn, verificationRequestCodeFailure)
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
@@ -119,8 +122,8 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 	resp.Body.Close()
 
 	if err != nil {
-		log.Println("[V1] Failed to read Twilio API response body.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
@@ -128,23 +131,21 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 	err = json.Unmarshal(body, &r)
 
 	if err != nil {
-		log.Println("[V1] Failed to parse Twilio verification start response body JSON.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
 	if !r["success"].(bool) {
-		log.Println("[V1] Twilio verification start API call failed.")
-		writeEmptyAction(conn, verificationRequestCodeFailure)
+		errors = append(errors, "i failed to make verification start api call")
+		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
-	if !findClient(countryCode, phoneNumber) {
-		if !createClient(countryCode, phoneNumber) {
-			log.Println("[V1] Failed to create client.")
-			writeEmptyAction(conn, verificationRequestCodeFailure)
-			return
-		}
+	if !findClient(countryCode, phoneNumber) && !createClient(countryCode, phoneNumber) {
+		errors = append(errors, "i failed to create you!")
+		writeFailure(conn, verificationRequestCodeFailure, errors)
+		return
 	}
 
 	client := &Client{
