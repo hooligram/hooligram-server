@@ -2,6 +2,7 @@
 
 deploy() {
   echo "deploying..."
+
   if [[ ! -f ./hooligram-developer.pem ]]; then
     echo "error: hooligram-developer.pem file is missing"
     return 1
