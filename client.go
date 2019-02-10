@@ -1,8 +1,9 @@
 package main
 
 func (client *Client) writeEmptyAction(actionType string) {
-	client.conn.WriteJSON(Action{
-		Payload: map[string]interface{}{},
-		Type:    actionType,
-	})
+	writeEmptyAction(client.conn, actionType)
+}
+
+func (client *Client) writeJSON(action *Action) {
+	client.conn.WriteJSON(*action)
 }

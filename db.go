@@ -136,8 +136,8 @@ func findVerifiedClient(countryCode, phoneNumber, verificationCode string) (*Cli
 	var id int
 	rows.Scan(&id)
 	client := Client{
-		CountryCode:      countryCode,
 		ID:               id,
+		CountryCode:      countryCode,
 		PhoneNumber:      phoneNumber,
 		VerificationCode: verificationCode,
 	}

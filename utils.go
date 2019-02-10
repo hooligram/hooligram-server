@@ -1,6 +1,8 @@
 package main
 
-import "github.com/gorilla/websocket"
+import (
+	"github.com/gorilla/websocket"
+)
 
 func writeFailure(conn *websocket.Conn, actionType string, errors []string) {
 	conn.WriteJSON(Action{
