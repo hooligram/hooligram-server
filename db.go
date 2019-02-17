@@ -52,6 +52,14 @@ func init() {
 }
 
 func getOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
+	if countryCode != getDigits(countryCode) {
+		return nil, errors.New("hey, countryCode should only contain digits")
+	}
+
+	if phoneNumber != getDigits(phoneNumber) {
+		return nil, errors.New("hey, phoneNumber should only contain digits")
+	}
+
 	client, ok := findClient(countryCode, phoneNumber)
 
 	if ok {
