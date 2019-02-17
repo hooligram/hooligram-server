@@ -25,6 +25,10 @@ func main() {
 		log.Fatal("[MAIN] TWILIO_API_KEY must be set. Exiting...")
 	}
 
+	if db == nil {
+		log.Fatal("[MAIN] Failed to initialize the DB. Exiting...")
+	}
+
 	router := mux.NewRouter()
 	router.HandleFunc("/v1", v1)
 

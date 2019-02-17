@@ -11,32 +11,34 @@ func init() {
 	dbUsername := os.Getenv("MYSQL_USERNAME")
 
 	if dbUsername == "" {
-		log.Fatal("[DB] MYSQL_USERNAME must be set. Exiting...")
+		log.Println("[DB] MYSQL_USERNAME must be set.")
 	}
 
 	dbPassword := os.Getenv("MYSQL_PASSWORD")
 
 	if dbPassword == "" {
-		log.Fatal("[DB] MYSQL_PASSWORD must be set. Exiting...")
+		log.Println("[DB] MYSQL_PASSWORD must be set.")
 	}
 
 	dbName := os.Getenv("MYSQL_DB_NAME")
 
 	if dbName == "" {
-		log.Fatal("[DB] MYSQL_DB_NAME must be set. Exiting...")
+		log.Println("[DB] MYSQL_DB_NAME must be set.")
 	}
 
 	var err error
 	db, err = sql.Open("mysql", dbUsername+":"+dbPassword+"@/"+dbName)
 
 	if err != nil {
-		log.Fatal("[DB] Error setting up MySQL DB connection. Exiting...")
+		log.Println("[DB] Error setting up MySQL DB connection.")
+		return
 	}
 
 	err = db.Ping()
 
 	if err != nil {
-		log.Fatal("[DB] Can't connect to MySQL DB. Exiting...")
+		log.Println("[DB] Can't connect to MySQL DB.")
+		return
 	}
 
 	db.Exec(`
