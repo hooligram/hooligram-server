@@ -153,7 +153,8 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 	err = unverifyClient(client, conn)
 
 	if err != nil {
-		writeFailure(conn, verificationRequestCodeFailure, []string{err.Error()})
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
 
