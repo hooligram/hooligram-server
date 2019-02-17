@@ -110,6 +110,22 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 		return
 	}
 
+	client, err := getOrCreateClient(countryCode, phoneNumber)
+
+	if err != nil {
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationRequestCodeFailure, errors)
+		return
+	}
+
+	err = unverifyClient(client, conn)
+
+	if err != nil {
+		errors = append(errors, err.Error())
+		writeFailure(conn, verificationRequestCodeFailure, errors)
+		return
+	}
+
 	resp, err := postTwilioVerificationStart(countryCode, phoneNumber)
 
 	if err != nil {
@@ -138,22 +154,6 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 
 	if !r["success"].(bool) {
 		errors = append(errors, "i failed to make verification start api call")
-		writeFailure(conn, verificationRequestCodeFailure, errors)
-		return
-	}
-
-	client, err := getOrCreateClient(countryCode, phoneNumber)
-
-	if err != nil {
-		errors = append(errors, err.Error())
-		writeFailure(conn, verificationRequestCodeFailure, errors)
-		return
-	}
-
-	err = unverifyClient(client, conn)
-
-	if err != nil {
-		errors = append(errors, err.Error())
 		writeFailure(conn, verificationRequestCodeFailure, errors)
 		return
 	}
