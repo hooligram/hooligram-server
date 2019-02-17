@@ -70,7 +70,8 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	}
 
 	writeQueuedActions(client)
-	client.writeEmptyAction(authorizationSignInSuccess)
+	action.Type = authorizationSignInSuccess
+	client.writeJSON(action)
 }
 
 func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
