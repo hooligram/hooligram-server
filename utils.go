@@ -1,8 +1,15 @@
 package main
 
 import (
+	"regexp"
+
 	"github.com/gorilla/websocket"
 )
+
+func getDigits(s string) string {
+	re := regexp.MustCompile("[^0-9]")
+	return re.ReplaceAllString(s, "")
+}
 
 func constructBroadcastAction(source *Client, message string) *Action {
 	sender := make(map[string]string)
