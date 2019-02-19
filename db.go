@@ -44,9 +44,9 @@ func init() {
 	db.Exec(`
 		CREATE TABLE IF NOT EXISTS client (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-			country_code VARCHAR(50) NOT NULL,
-			phone_number VARCHAR(50) NOT NULL,
-			verification_code VARCHAR(50),
+			country_code VARCHAR (50) NOT NULL,
+			phone_number VARCHAR (50) NOT NULL,
+			verification_code VARCHAR (50),
 			PRIMARY KEY (id),
 			UNIQUE KEY (country_code, phone_number)
 		)
