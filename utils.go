@@ -41,10 +41,3 @@ func writeEmptyAction(conn *websocket.Conn, actionType string) {
 		actionType,
 	})
 }
-
-func writeError(conn *websocket.Conn, code int) {
-	conn.WriteJSON(Action{
-		map[string]interface{}{"code": code},
-		"ERROR",
-	})
-}

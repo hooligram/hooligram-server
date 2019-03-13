@@ -27,17 +27,16 @@ func v1(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			log.Println("[V1] Error reading JSON.")
-			writeError(conn, 2001)
 			break
 		}
 
 		if action.Type == "" {
-			writeError(conn, 3001)
+			log.Println("[V1] action type is missing")
 			continue
 		}
 
 		if action.Payload == nil {
-			writeError(conn, 3001)
+			log.Println("[V1] action payload is missing")
 			continue
 		}
 
@@ -51,7 +50,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		case verificationSubmitCodeRequest:
 			handleVerificationSubmitCodeRequest(conn, &action)
 		default:
-			writeError(conn, 3002)
+			log.Println("[V1] action type isn't supported")
 		}
 	}
 }
