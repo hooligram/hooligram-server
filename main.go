@@ -30,7 +30,7 @@ func main() {
 	}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/v1", v1)
+	router.HandleFunc("/v2", v2)
 
 	go broadcast()
 

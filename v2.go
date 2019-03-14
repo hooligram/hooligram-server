@@ -9,11 +9,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func v1(w http.ResponseWriter, r *http.Request) {
+func v2(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
-		log.Println("[V1] Failed to upgrade to WebSocket connection.")
+		log.Println("[V2] Failed to upgrade to WebSocket connection.")
 		return
 	}
 
@@ -26,17 +26,17 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		err = conn.ReadJSON(&action)
 
 		if err != nil {
-			log.Println("[V1] Error reading JSON.")
+			log.Println("[V2] Error reading JSON.")
 			break
 		}
 
 		if action.Type == "" {
-			log.Println("[V1] action type is missing")
+			log.Println("[V2] action type is missing")
 			continue
 		}
 
 		if action.Payload == nil {
-			log.Println("[V1] action payload is missing")
+			log.Println("[V2] action payload is missing")
 			continue
 		}
 
@@ -50,7 +50,7 @@ func v1(w http.ResponseWriter, r *http.Request) {
 		case verificationSubmitCodeRequest:
 			handleVerificationSubmitCodeRequest(conn, &action)
 		default:
-			log.Println("[V1] action type isn't supported")
+			log.Println("[V2] action type isn't supported")
 		}
 	}
 }
@@ -62,8 +62,8 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	client, err := signIn(conn, countryCode, phoneNumber, verificationCode)
 
 	if err != nil {
-		log.Println("[V1] Couldn't sign in client.")
-		log.Println("[V1]", err.Error())
+		log.Println("[V2] Couldn't sign in client.")
+		log.Println("[V2]", err.Error())
 		writeFailure(conn, authorizationSignInFailure, []string{"couldn't sign in you"})
 		return
 	}
