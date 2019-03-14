@@ -44,12 +44,70 @@ func init() {
 	db.Exec(`
 		CREATE TABLE IF NOT EXISTS client (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-			country_code VARCHAR (50) NOT NULL,
-			phone_number VARCHAR (50) NOT NULL,
-			verification_code VARCHAR (50),
+			country_code VARCHAR (64) NOT NULL,
+			phone_number VARCHAR (64) NOT NULL,
+			verification_code VARCHAR (64),
+			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY (id),
 			UNIQUE KEY (country_code, phone_number)
-		)
+		);
+	`)
+
+	db.Exec(`
+		CREATE TABLE IF NOT EXISTS message_group (
+			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+			name VARCHAR (32) NOT NULL,
+			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id)
+		);
+	`)
+
+	db.Exec(`
+		CREATE TABLE IF NOT EXISTS message (
+			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+			content TEXT NOT NULL,
+			message_group_id INT UNSIGNED NOT NULL,
+			sender_id INT UNSIGNED NOT NULL,
+			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			CONSTRAINT FOREIGN KEY (message_group_id) REFERENCES message_group (id)
+				ON DELETE CASCADE
+				ON UPDATE CASCADE,
+			CONSTRAINT FOREIGN KEY (sender_id) REFERENCES client (id)
+				ON DELETE CASCADE
+				ON UPDATE CASCADE
+		);
+	`)
+
+	db.Exec(`
+		CREATE TABLE IF NOT EXISTS message_group_member (
+			message_group_id INT UNSIGNED NOT NULL,
+			member_id INT UNSIGNED NOT NULL,
+			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (message_group_id, member_id),
+			CONSTRAINT FOREIGN KEY (message_group_id) REFERENCES message_group (id)
+				ON DELETE CASCADE
+				ON UPDATE CASCADE,
+			CONSTRAINT FOREIGN KEY (member_id) REFERENCES client (id)
+				ON DELETE CASCADE
+				ON UPDATE CASCADE
+		);
+	`)
+
+	db.Exec(`
+		CREATE TABLE IF NOT EXISTS receipt (
+			message_id INT UNSIGNED NOT NULL,
+			recipient_id INT UNSIGNED NOT NULL,
+			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
+			date_delivered DATETIME,
+			PRIMARY KEY (message_id, recipient_id),
+			CONSTRAINT FOREIGN KEY (message_id) REFERENCES message (id)
+				ON DELETE CASCADE
+				ON UPDATE CASCADE,
+			CONSTRAINT FOREIGN KEY (recipient_id) REFERENCES client (id)
+				ON DELETE CASCADE
+				ON UPDATE CASCADE
+		);
 	`)
 }
 
