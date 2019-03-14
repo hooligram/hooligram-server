@@ -161,12 +161,14 @@ func findAllVerifiedClients() []*Client {
 		var countryCode string
 		var phoneNumber string
 		var verificationCode string
-		rows.Scan(&id, &countryCode, &phoneNumber, &verificationCode)
+		var dateCreated string
+		rows.Scan(&id, &countryCode, &phoneNumber, &verificationCode, &dateCreated)
 		client := Client{
 			ID:               id,
 			CountryCode:      countryCode,
 			PhoneNumber:      phoneNumber,
 			VerificationCode: verificationCode,
+			DateCreated:      dateCreated,
 		}
 		clients = append(clients, &client)
 	}
@@ -196,13 +198,15 @@ func findClient(countryCode, phoneNumber string) (*Client, bool) {
 
 	var id int
 	var verificationCode string
-	rows.Scan(&id, nil, nil, &verificationCode)
+	var dateCreated string
+	rows.Scan(&id, nil, nil, &verificationCode, &dateCreated)
 
 	client := &Client{
 		ID:               id,
 		CountryCode:      countryCode,
 		PhoneNumber:      phoneNumber,
 		VerificationCode: verificationCode,
+		DateCreated:      dateCreated,
 	}
 
 	return client, true
@@ -227,12 +231,14 @@ func findVerifiedClient(countryCode, phoneNumber, verificationCode string) (*Cli
 	}
 
 	var id int
-	rows.Scan(&id)
+	var dateCreated string
+	rows.Scan(&id, nil, nil, nil, &dateCreated)
 	client := Client{
 		ID:               id,
 		CountryCode:      countryCode,
 		PhoneNumber:      phoneNumber,
 		VerificationCode: verificationCode,
+		DateCreated:      dateCreated,
 	}
 
 	return &client, true

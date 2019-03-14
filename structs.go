@@ -1,6 +1,8 @@
 package main
 
-import "github.com/gorilla/websocket"
+import (
+	"github.com/gorilla/websocket"
+)
 
 // Action .
 type Action struct {
@@ -14,6 +16,7 @@ type Client struct {
 	CountryCode      string
 	PhoneNumber      string
 	VerificationCode string
+	DateCreated      string
 
 	IsSignedIn bool
 	conn       *websocket.Conn
