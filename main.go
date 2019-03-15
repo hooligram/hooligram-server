@@ -33,6 +33,7 @@ func main() {
 	router.HandleFunc("/v2", v2)
 
 	go broadcast()
+	go deliverMessage()
 
 	http.ListenAndServe(":"+port, router)
 }
@@ -65,6 +66,27 @@ func broadcast() {
 			}
 
 			onlineConn.WriteJSON(action)
+		}
+	}
+}
+
+func deliverMessage() {
+	for {
+		messageDelivery := <-messageDeliveryChan
+		message := messageDelivery.Message
+		recipientIDs := messageDelivery.RecipientIDs
+
+		for conn, client := range clients {
+			if !containsID(recipientIDs, client.ID) {
+				continue
+			}
+
+			if conn == nil {
+				continue
+			}
+
+			action := constructDeliverMessageAction(message)
+			conn.WriteJSON(action)
 		}
 	}
 }

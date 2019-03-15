@@ -129,6 +129,10 @@ func createMessage(content string, messageGroupID, senderID int) (*Message, erro
 		return nil, errors.New("failed to find message")
 	}
 
+	if !rows.Next() {
+		return nil, errors.New("can't find message")
+	}
+
 	var dateCreated string
 	rows.Scan(&dateCreated)
 

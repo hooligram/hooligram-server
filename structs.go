@@ -30,3 +30,9 @@ type Message struct {
 	SenderID       int
 	DateCreated    string
 }
+
+// MessageDelivery .
+type MessageDelivery struct {
+	Message      *Message
+	RecipientIDs []int
+}

@@ -12,6 +12,7 @@ var broadcastChan = make(chan *Action)
 var clients = make(map[*websocket.Conn]*Client)
 var db *sql.DB
 var httpClient = &http.Client{}
+var messageDeliveryChan = make(chan *MessageDelivery)
 var pendingActionQueue = make(map[*Client][]*Action)
 var twilioAPIKey string
 var upgrader = websocket.Upgrader{}

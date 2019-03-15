@@ -122,12 +122,23 @@ func handleMessagingSendRequest(conn *websocket.Conn, action *Action) {
 		return
 	}
 
+	var recipientIDs []int
+
 	for _, recipientID := range messageGroupMemberIDs {
 		if recipientID == int(message.SenderID) {
 			continue
 		}
 
+		recipientIDs = append(recipientIDs, recipientID)
+	}
+
+	for _, recipientID := range recipientIDs {
 		createReceipt(message.ID, recipientID)
+	}
+
+	messageDeliveryChan <- &MessageDelivery{
+		Message:      message,
+		RecipientIDs: recipientIDs,
 	}
 
 	payload := make(map[string]interface{})
