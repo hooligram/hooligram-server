@@ -275,6 +275,37 @@ func findClient(countryCode, phoneNumber string) (*Client, bool) {
 	return client, true
 }
 
+func findUndeliveredMessages(recipientID int) ([]*Message, error) {
+	rows, err := db.Query(`
+		SELECT message.*
+		FROM receipt JOIN message ON receipt.message_id = message.id
+		WHERE receipt.recipient_id = ? AND receipt.date_delivered IS NULL;
+	`, recipientID)
+	if err != nil {
+		return nil, err
+	}
+
+	var messages []*Message
+
+	for rows.Next() {
+		var id int
+		var content string
+		var messageGroupID int
+		var senderID int
+		var dateCreated string
+		rows.Scan(&id, &content, &messageGroupID, &senderID, &dateCreated)
+		messages = append(messages, &Message{
+			ID:             id,
+			Content:        content,
+			MessageGroupID: messageGroupID,
+			SenderID:       senderID,
+			DateCreated:    dateCreated,
+		})
+	}
+
+	return messages, nil
+}
+
 func findVerifiedClient(countryCode, phoneNumber, verificationCode string) (*Client, bool) {
 	rows, err := db.Query(`
 		SELECT *
@@ -330,4 +361,12 @@ func updateClientVerificationCode(client *Client, verificationCode string) error
 	}
 
 	return nil
+}
+
+func updateReceiptDateDelivered(messageID, recipientID int) error {
+	_, err := db.Exec(`
+		UPDATE receipt SET date_delivered = CURRENT_TIMESTAMP
+		WHERE message_id = ? AND recipient_id = ?;
+	`, messageID, recipientID)
+	return err
 }

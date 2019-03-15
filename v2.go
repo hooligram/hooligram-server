@@ -45,6 +45,8 @@ func v2(w http.ResponseWriter, r *http.Request) {
 			handleAuthorizationSignInRequest(conn, &action)
 		case messagingSendRequest:
 			handleMessagingSendRequest(conn, &action)
+		case messagingDeliverSuccess:
+			handleMessagingDeliverSuccess(conn, &action)
 		case messagingBroadcastRequest:
 			handleMessagingBroadcastRequest(conn, &action)
 		case verificationRequestCodeRequest:
@@ -73,6 +75,16 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	writeQueuedActions(client)
 	action.Type = authorizationSignInSuccess
 	client.writeJSON(action)
+
+	undeliveredMessages, err := findUndeliveredMessages(client.ID)
+	if err != nil {
+		log.Println("failed to find undelivered message ids")
+	}
+
+	for _, undeliveredMessage := range undeliveredMessages {
+		action := constructDeliverMessageAction(undeliveredMessage)
+		client.writeJSON(action)
+	}
 }
 
 func handleMessagingSendRequest(conn *websocket.Conn, action *Action) {
@@ -147,6 +159,23 @@ func handleMessagingSendRequest(conn *websocket.Conn, action *Action) {
 		Payload: payload,
 		Type:    messagingSendSuccess,
 	})
+}
+
+func handleMessagingDeliverSuccess(conn *websocket.Conn, action *Action) {
+	client, err := getSignedInClient(conn)
+	if err != nil {
+		client.writeFailure(messagingDeliverFailure, []string{err.Error()})
+		return
+	}
+
+	messageID, ok := action.Payload["message_id"].(float64)
+	if !ok {
+		client.writeFailure(messagingDeliverFailure, []string{"message_id is missing"})
+		return
+	}
+
+	recipientID := client.ID
+	updateReceiptDateDelivered(int(messageID), recipientID)
 }
 
 func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
