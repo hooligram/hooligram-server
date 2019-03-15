@@ -116,6 +116,20 @@ func handleMessagingSendRequest(conn *websocket.Conn, action *Action) {
 		return
 	}
 
+	messageGroupMemberIDs, err := findAllMessageGroupMemberIDs(message.MessageGroupID)
+	if err != nil {
+		client.writeFailure(messagingSendFailure, []string{err.Error()})
+		return
+	}
+
+	for _, recipientID := range messageGroupMemberIDs {
+		if recipientID == int(message.SenderID) {
+			continue
+		}
+
+		createReceipt(message.ID, recipientID)
+	}
+
 	payload := make(map[string]interface{})
 	payload["message_id"] = message.ID
 	client.writeJSON(&Action{

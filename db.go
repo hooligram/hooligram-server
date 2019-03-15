@@ -141,6 +141,14 @@ func createMessage(content string, messageGroupID, senderID int) (*Message, erro
 	}, nil
 }
 
+func createReceipt(messageID, recipientID int) error {
+	_, err := db.Query(`
+		INSERT INTO receipt (message_id, recipient_id) VALUES (?, ?);
+	`, messageID, recipientID)
+
+	return err
+}
+
 func getOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
 	if countryCode != getDigits(countryCode) {
 		return nil, errors.New("hey, countryCode should only contain digits")
@@ -171,6 +179,27 @@ func getOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
 	}
 
 	return client, nil
+}
+
+func findAllMessageGroupMemberIDs(messageGroupID int) ([]int, error) {
+	rows, err := db.Query(`
+		SELECT member_id
+		FROM message_group_member
+		WHERE message_group_id = ?;
+	`, messageGroupID)
+	if err != nil {
+		return nil, err
+	}
+
+	var memberIDs []int
+
+	for rows.Next() {
+		var id int
+		rows.Scan(&id)
+		memberIDs = append(memberIDs, id)
+	}
+
+	return memberIDs, nil
 }
 
 func findAllVerifiedClients() []*Client {
