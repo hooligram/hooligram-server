@@ -43,6 +43,8 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		switch action.Type {
 		case authorizationSignInRequest:
 			handleAuthorizationSignInRequest(conn, &action)
+		case messagingSendRequest:
+			handleMessagingSendRequest(conn, &action)
 		case messagingBroadcastRequest:
 			handleMessagingBroadcastRequest(conn, &action)
 		case verificationRequestCodeRequest:
@@ -71,6 +73,55 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	writeQueuedActions(client)
 	action.Type = authorizationSignInSuccess
 	client.writeJSON(action)
+}
+
+func handleMessagingSendRequest(conn *websocket.Conn, action *Action) {
+	client, err := getSignedInClient(conn)
+	if err != nil {
+		client.writeFailure(messagingSendFailure, []string{err.Error()})
+		return
+	}
+
+	content, ok := action.Payload["content"].(string)
+	if !ok {
+		client.writeFailure(messagingSendFailure, []string{"content is missing"})
+		return
+	}
+
+	messageGroupID, ok := action.Payload["message_group_id"].(float64)
+	if !ok {
+		client.writeFailure(messagingSendFailure, []string{"message_group_id is missing"})
+		return
+	}
+
+	senderID, ok := action.Payload["sender_id"].(float64)
+	if !ok {
+		client.writeFailure(messagingSendFailure, []string{"sender_id is missing"})
+		return
+	}
+
+	if client.ID != int(senderID) {
+		client.writeFailure(messagingSendFailure, []string{"sender_id mismatch"})
+		return
+	}
+
+	if !isClientInMessageGroup(int(senderID), int(messageGroupID)) {
+		client.writeFailure(messagingSendFailure, []string{"sender doesn't belong to message group"})
+		return
+	}
+
+	message, err := createMessage(content, int(messageGroupID), int(senderID))
+	if err != nil {
+		client.writeFailure(messagingSendFailure, []string{err.Error()})
+		return
+	}
+
+	payload := make(map[string]interface{})
+	payload["message_id"] = message.ID
+	client.writeJSON(&Action{
+		Payload: payload,
+		Type:    messagingSendSuccess,
+	})
 }
 
 func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {

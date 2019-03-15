@@ -111,6 +111,36 @@ func init() {
 	`)
 }
 
+func createMessage(content string, messageGroupID, senderID int) (*Message, error) {
+	result, err := db.Exec(`
+		INSERT INTO message (content, message_group_id, sender_id) VALUES (?, ?, ?);
+	`, content, messageGroupID, senderID)
+
+	if err != nil {
+		return nil, errors.New("failed to create message")
+	}
+
+	id, _ := result.LastInsertId()
+	rows, err := db.Query(`
+		SELECT date_created FROM message WHERE id = ?;
+	`, id)
+
+	if err != nil {
+		return nil, errors.New("failed to find message")
+	}
+
+	var dateCreated string
+	rows.Scan(&dateCreated)
+
+	return &Message{
+		ID:             int(id),
+		Content:        content,
+		MessageGroupID: messageGroupID,
+		SenderID:       senderID,
+		DateCreated:    dateCreated,
+	}, nil
+}
+
 func getOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
 	if countryCode != getDigits(countryCode) {
 		return nil, errors.New("hey, countryCode should only contain digits")
@@ -242,6 +272,19 @@ func findVerifiedClient(countryCode, phoneNumber, verificationCode string) (*Cli
 	}
 
 	return &client, true
+}
+
+func isClientInMessageGroup(clientID, messageGroupID int) bool {
+	rows, err := db.Query(`
+		SELECT * FROM message_group_member
+		WHERE message_group_id = ? AND member_id = ?;
+	`, clientID, messageGroupID)
+
+	if err != nil {
+		return false
+	}
+
+	return rows.Next()
 }
 
 func updateClientVerificationCode(client *Client, verificationCode string) error {

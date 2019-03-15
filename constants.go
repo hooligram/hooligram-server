@@ -9,6 +9,10 @@ const (
 	messagingBroadcastRequest = "MESSAGING_BROADCAST_REQUEST"
 	messagingBroadcastSuccess = "MESSAGING_BROADCAST_SUCCESS"
 
+	messagingSendFailure = "MESSAGING_SEND_FAILURE"
+	messagingSendRequest = "MESSAGING_SEND_REQUEST"
+	messagingSendSuccess = "MESSAGING_SEND_SUCCESS"
+
 	verificationRequestCodeFailure = "VERIFICATION_REQUEST_CODE_FAILURE"
 	verificationRequestCodeRequest = "VERIFICATION_REQUEST_CODE_REQUEST"
 	verificationRequestCodeSuccess = "VERIFICATION_REQUEST_CODE_SUCCESS"
