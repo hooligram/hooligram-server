@@ -368,6 +368,12 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 			"you need to include at least one member in `member_ids` in payload",
 		)
 	}
+	if !containsID(memberIds, client.ID) {
+		errors = append(
+			errors,
+			"you need to include at the group creator in `member_ids` in payload",
+		)
+	}
 
 	if len(errors) > 0 {
 		log.Println(errors)
