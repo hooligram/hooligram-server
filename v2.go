@@ -175,7 +175,11 @@ func handleMessagingDeliverSuccess(conn *websocket.Conn, action *Action) {
 	}
 
 	recipientID := client.ID
-	updateReceiptDateDelivered(int(messageID), recipientID)
+	err = updateReceiptDateDelivered(int(messageID), recipientID)
+	if err != nil {
+		client.writeFailure(messagingDeliverFailure, []string{err.Error()})
+		return
+	}
 }
 
 func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
