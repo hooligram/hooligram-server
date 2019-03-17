@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -53,6 +54,8 @@ func v2(w http.ResponseWriter, r *http.Request) {
 			handleVerificationRequestCodeRequest(conn, &action)
 		case verificationSubmitCodeRequest:
 			handleVerificationSubmitCodeRequest(conn, &action)
+		case groupCreateRequest:
+			handleGroupCreateRequest(conn, &action)
 		default:
 			log.Println("[V2] action type isn't supported")
 		}
@@ -332,4 +335,52 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 
 	verifyClient(client, conn, code)
 	writeEmptyAction(conn, verificationSubmitCodeSuccess)
+}
+
+func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
+
+	errors := []string{}
+	client, err := getClient(conn)
+
+	if err != nil {
+		errors = append(errors, err.Error())
+		writeFailure(conn, groupCreateFailure, errors)
+		return
+	}
+
+	groupName, groupNameOk := action.Payload["name"].(string)
+	_memberIds, memberIdsOk := action.Payload["member_ids"].([]interface{})
+
+	memberIds := make([]int, len(_memberIds))
+	for i, memberId := range _memberIds {
+		memberIds[i] = int(memberId.(float64))
+	}
+
+	if !groupNameOk {
+		errors = append(errors, "you need to include `name` in payload")
+	}
+	if !memberIdsOk {
+		errors = append(errors, "you need to include `member_ids` in payload")
+	}
+	if len(memberIds) < 1 {
+		errors = append(
+			errors,
+			"you need to include at least one member in `member_ids` in payload",
+		)
+	}
+
+	if len(errors) > 0 {
+		log.Println(errors)
+		writeFailure(conn, verificationSubmitCodeFailure, errors)
+		return
+	}
+
+	successAction := constructCreateGroupSuccessAction(
+		101,
+		groupName,
+		memberIds,
+		time.Now().Unix(),
+	)
+
+	client.writeJSON(successAction)
 }

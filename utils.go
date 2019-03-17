@@ -34,6 +34,26 @@ func constructDeliverMessageAction(message *Message) *Action {
 	}
 }
 
+func constructCreateGroupSuccessAction(
+	groupId int,
+	groupName string,
+	memberIds []int,
+	dateCreated int64,
+) *Action {
+	payload := make(map[string]interface{})
+	memberIds = append([]int(nil), memberIds...)
+
+	payload["id"] = groupId
+	payload["date_created"] = dateCreated
+	payload["member_ids"] = memberIds
+	payload["name"] = groupName
+
+	return &Action{
+		Payload: payload,
+		Type: groupCreateSuccess,
+	}
+}
+
 func containsID(ids []int, id int) bool {
 	for _, i := range ids {
 		if i == id {
