@@ -13,7 +13,7 @@ func v2(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
-		log.Println("[v2] Failed to upgrade to WebSocket connection.")
+		log.Println("[v2] upgrade to websocket failed")
 		return
 	}
 
@@ -37,20 +37,20 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		err = json.Unmarshal(p, &action)
 
 		if err != nil {
-			log.Println("[v2] Error reading JSON.")
+			log.Println("[v2] error reading json")
 			log.Println("client id", client.ID)
 			log.Println(err.Error())
 			continue
 		}
 
 		if action.Type == "" {
-			log.Println("[v2] action type is missing")
+			log.Println("[v2] missing action type")
 			log.Println("client id", client.ID)
 			continue
 		}
 
 		if action.Payload == nil {
-			log.Println("[v2] action payload is missing")
+			log.Println("[v2] missing action payload")
 			log.Println("client id", client.ID)
 			continue
 		}
@@ -71,7 +71,7 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		case groupCreateRequest:
 			handleGroupCreateRequest(conn, &action)
 		default:
-			log.Println("[v2] action type isn't supported")
+			log.Println("[v2] unknown action type")
 			log.Println("client id", client.ID)
 		}
 	}
