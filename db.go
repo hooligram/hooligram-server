@@ -41,6 +41,8 @@ func init() {
 		return
 	}
 
+	db.Exec("SET GLOBAL time_zone = '+00:00';")
+
 	db.Exec(`
 		CREATE TABLE IF NOT EXISTS client (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
