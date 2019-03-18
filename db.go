@@ -401,13 +401,6 @@ func createMessageGroup(groupName string, memberIds []int) (*MessageGroup, error
 		return nil, err
 	}
 
-	if groupId == -1 {
-		tx.Rollback()
-		err := errors.New("Failure creating new group `` in database")
-		log.Println(err)
-		return nil, err
-	}
-
 	for _, memberId := range memberIds {
 		result, err = tx.Exec(
 			`INSERT INTO message_group_member ( message_group_id, member_id )
