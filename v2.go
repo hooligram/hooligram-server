@@ -13,7 +13,7 @@ func v2(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
-		log.Println("[V2] Failed to upgrade to WebSocket connection.")
+		log.Println("[v2] Failed to upgrade to WebSocket connection.")
 		return
 	}
 
@@ -27,7 +27,7 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		var p []byte
 		_, p, err = conn.ReadMessage()
 		if err != nil {
-			log.Println("[V2] connection error")
+			log.Println("[v2] connection error")
 			log.Println("client id", client.ID)
 			log.Println(err.Error())
 			return
@@ -37,20 +37,20 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		err = json.Unmarshal(p, &action)
 
 		if err != nil {
-			log.Println("[V2] Error reading JSON.")
+			log.Println("[v2] Error reading JSON.")
 			log.Println("client id", client.ID)
 			log.Println(err.Error())
 			continue
 		}
 
 		if action.Type == "" {
-			log.Println("[V2] action type is missing")
+			log.Println("[v2] action type is missing")
 			log.Println("client id", client.ID)
 			continue
 		}
 
 		if action.Payload == nil {
-			log.Println("[V2] action payload is missing")
+			log.Println("[v2] action payload is missing")
 			log.Println("client id", client.ID)
 			continue
 		}
@@ -71,7 +71,7 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		case groupCreateRequest:
 			handleGroupCreateRequest(conn, &action)
 		default:
-			log.Println("[V2] action type isn't supported")
+			log.Println("[v2] action type isn't supported")
 			log.Println("client id", client.ID)
 		}
 	}
@@ -84,8 +84,8 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 	client, err := signIn(conn, countryCode, phoneNumber, verificationCode)
 
 	if err != nil {
-		log.Println("[V2] Couldn't sign in client.")
-		log.Println("[V2]", err.Error())
+		log.Println("[v2] Couldn't sign in client.")
+		log.Println("[v2]", err.Error())
 		writeFailure(conn, authorizationSignInFailure, []string{"couldn't sign in you"})
 		return
 	}
