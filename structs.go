@@ -19,6 +19,7 @@ type Client struct {
 	DateCreated      string
 
 	IsSignedIn bool
+	SessionID  string
 	conn       *websocket.Conn
 }
 

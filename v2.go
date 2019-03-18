@@ -2,12 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 )
+
+const tag = "v2"
 
 func v2(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -17,7 +20,9 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clients[conn] = &Client{}
+	clients[conn] = &Client{
+		SessionID: generateSessionID(),
+	}
 	defer delete(clients, conn)
 	defer conn.Close()
 
@@ -55,9 +60,12 @@ func v2(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		logOpen(client, &action)
+		var result *Action
+
 		switch action.Type {
 		case authorizationSignInRequest:
-			handleAuthorizationSignInRequest(conn, &action)
+			result = handleAuthorizationSignInRequest(conn, &action)
 		case messagingSendRequest:
 			handleMessagingSendRequest(conn, &action)
 		case messagingDeliverSuccess:
@@ -74,20 +82,26 @@ func v2(w http.ResponseWriter, r *http.Request) {
 			log.Println("[v2] unknown action type")
 			log.Println("client id", client.ID)
 		}
+
+		logClose(client, result)
 	}
 }
 
-func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
+func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) *Action {
 	countryCode := action.Payload["country_code"].(string)
 	phoneNumber := action.Payload["phone_number"].(string)
 	verificationCode := action.Payload["code"].(string)
 	client, err := signIn(conn, countryCode, phoneNumber, verificationCode)
 
 	if err != nil {
-		log.Println("[v2] Couldn't sign in client.")
-		log.Println("[v2]", err.Error())
-		writeFailure(conn, authorizationSignInFailure, []string{"couldn't sign in you"})
-		return
+		writeFailure(conn, authorizationSignInFailure, []string{"sign in failed"})
+		logInfo(tag, fmt.Sprintf("couldn't sign in client. %v", err.Error()))
+		return &Action{
+			Payload: map[string]interface{}{
+				"errors": []string{"sign in failed"},
+			},
+			Type: authorizationSignInFailure,
+		}
 	}
 
 	writeQueuedActions(client)
@@ -103,6 +117,8 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 		action := constructDeliverMessageAction(undeliveredMessage)
 		client.writeJSON(action)
 	}
+
+	return action
 }
 
 func handleMessagingSendRequest(conn *websocket.Conn, action *Action) {

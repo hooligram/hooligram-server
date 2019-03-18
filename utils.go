@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	"math/rand"
 	"regexp"
 
 	"github.com/gorilla/websocket"
@@ -64,9 +66,32 @@ func containsID(ids []int, id int) bool {
 	return false
 }
 
+func generateSessionID() string {
+	var runes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	sessionID := make([]rune, 8)
+
+	for i := range sessionID {
+		sessionID[i] = runes[rand.Intn(len(runes))]
+	}
+
+	return string(sessionID)
+}
+
 func getDigits(s string) string {
 	re := regexp.MustCompile("[^0-9]")
 	return re.ReplaceAllString(s, "")
+}
+
+func logClose(client *Client, action *Action) {
+	log.Printf("=== [%v] [%v] [%v] [%v]\n", client.SessionID, client.ID, action.Type, action.Payload)
+}
+
+func logInfo(tag, text string) {
+	log.Printf("--- [%v] %v", tag, text)
+}
+
+func logOpen(client *Client, action *Action) {
+	log.Printf(">>> [%v] [%v] [%v] [%v]\n", client.SessionID, client.ID, action.Type, action.Payload)
 }
 
 func writeFailure(conn *websocket.Conn, actionType string, errors []string) {
