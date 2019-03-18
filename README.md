@@ -39,4 +39,4 @@
 
 ## Logging
 
-1. `journalctl --unit hooligram.service`
+1. `journalctl --pager-end --unit hooligram.service`
