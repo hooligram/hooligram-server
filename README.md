@@ -36,3 +36,7 @@
 2. Copy `hooligram-developer.pem` to project *root*
 3. `export IP_ADDR=<aws-ec2-ip-address>`
 4. `./deploy.sh`
+
+## Logging
+
+1. `journalctl --unit hooligram.service`
