@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -381,11 +380,13 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 		return
 	}
 
+	messageGroup, err := createMessageGroup(groupName, memberIds)
+
 	successAction := constructCreateGroupSuccessAction(
-		101,
-		groupName,
-		memberIds,
-		time.Now().Unix(),
+		messageGroup.ID,
+		messageGroup.Name,
+		messageGroup.MemberIDs,
+		messageGroup.DateCreated,
 	)
 
 	client.writeJSON(successAction)

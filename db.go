@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 )
@@ -371,4 +372,92 @@ func updateReceiptDateDelivered(messageID, recipientID int) error {
 		WHERE message_id = ? AND recipient_id = ?;
 	`, messageID, recipientID)
 	return err
+}
+
+func createMessageGroup(groupName string, memberIds []int) (*MessageGroup, error) {
+	tx, err := db.Begin()
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	result, err := tx.Exec(
+		`INSERT INTO message_group ( name ) VALUES ( ? );`,
+		groupName,
+	)
+
+	if err != nil {
+		tx.Rollback()
+		log.Println(err)
+		return nil, err
+	}
+
+	groupId, err := result.LastInsertId()
+
+	if err != nil {
+		tx.Rollback()
+		log.Println(err)
+		return nil, err
+	}
+
+	if groupId == -1 {
+		tx.Rollback()
+		err := errors.New("Failure creating new group `` in database")
+		log.Println(err)
+		return nil, err
+	}
+
+	for _, memberId := range memberIds {
+		result, err = tx.Exec(
+			`INSERT INTO message_group_member ( message_group_id, member_id )
+			VALUES ( ?, ? );`,
+			groupId,
+			memberId,
+		)
+
+		if err != nil {
+			tx.Rollback()
+			err := errors.New(
+				fmt.Sprintf("Failure creating new group `%v` in database", groupName),
+			)
+			log.Println(err)
+			return nil, err
+		}
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rows, err := db.Query(
+		`SELECT date_created FROM message_group WHERE id = ?;`,
+		groupId,
+	)
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if !rows.Next() {
+		errorMsg := "message_group `%v` has been added to the database but "
+		errorMsg += "an error occured when querying it"
+		log.Println(fmt.Sprintf(errorMsg, groupName))
+		return nil, errors.New(errorMsg)
+	}
+
+	var dateCreated string
+	rows.Scan(&dateCreated)
+
+	messageGroup := &MessageGroup{
+		ID: groupId,
+		DateCreated: dateCreated,
+		MemberIDs: memberIds,
+		Name: groupName,
+	}
+
+	return messageGroup, nil
 }
