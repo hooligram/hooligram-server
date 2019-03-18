@@ -22,21 +22,36 @@ func v2(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	for {
+		client := clients[conn]
+
+		var p []byte
+		_, p, err = conn.ReadMessage()
+		if err != nil {
+			log.Println("[V2] connection error")
+			log.Println("client id", client.ID)
+			log.Println(err.Error())
+			return
+		}
+
 		action := Action{}
-		err = conn.ReadJSON(&action)
+		err = json.Unmarshal(p, &action)
 
 		if err != nil {
 			log.Println("[V2] Error reading JSON.")
-			break
+			log.Println("client id", client.ID)
+			log.Println(err.Error())
+			continue
 		}
 
 		if action.Type == "" {
 			log.Println("[V2] action type is missing")
+			log.Println("client id", client.ID)
 			continue
 		}
 
 		if action.Payload == nil {
 			log.Println("[V2] action payload is missing")
+			log.Println("client id", client.ID)
 			continue
 		}
 
@@ -57,6 +72,7 @@ func v2(w http.ResponseWriter, r *http.Request) {
 			handleGroupCreateRequest(conn, &action)
 		default:
 			log.Println("[V2] action type isn't supported")
+			log.Println("client id", client.ID)
 		}
 	}
 }
