@@ -437,9 +437,10 @@ func createMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error
 
 	messageGroup := &MessageGroup{
 		ID:          groupID,
-		DateCreated: dateCreated,
-		MemberIDs:   memberIDs,
 		Name:        groupName,
+		DateCreated: dateCreated,
+
+		MemberIDs: memberIDs,
 	}
 
 	return messageGroup, nil
