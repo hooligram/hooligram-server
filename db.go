@@ -345,7 +345,7 @@ func isClientInMessageGroup(clientID, messageGroupID int) bool {
 	rows, err := db.Query(`
 		SELECT * FROM message_group_member
 		WHERE message_group_id = ? AND member_id = ?;
-	`, clientID, messageGroupID)
+	`, messageGroupID, clientID)
 
 	if err != nil {
 		return false
@@ -446,10 +446,10 @@ func createMessageGroup(groupName string, memberIds []int) (*MessageGroup, error
 	rows.Scan(&dateCreated)
 
 	messageGroup := &MessageGroup{
-		ID: groupId,
+		ID:          groupId,
 		DateCreated: dateCreated,
-		MemberIDs: memberIds,
-		Name: groupName,
+		MemberIDs:   memberIds,
+		Name:        groupName,
 	}
 
 	return messageGroup, nil
