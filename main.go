@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,19 +17,17 @@ func main() {
 	defer db.Close()
 
 	port := os.Getenv("PORT")
-
 	if port == "" {
-		log.Fatal("[MAIN] PORT must be set. Exiting...")
+		log.Fatal(fmt.Sprintf("[%v] PORT not set. exiting...", mainTag))
 	}
 
 	twilioAPIKey = os.Getenv("TWILIO_API_KEY")
-
 	if twilioAPIKey == "" {
-		log.Fatal("[MAIN] TWILIO_API_KEY must be set. Exiting...")
+		log.Fatal(fmt.Sprintf("[%v] TWILIO_API_KEY not set. exiting...", mainTag))
 	}
 
 	if db == nil {
-		log.Fatal("[MAIN] Failed to initialize the DB. Exiting...")
+		log.Fatal(fmt.Sprintf("[%v] db not found. exiting...", mainTag))
 	}
 
 	router := mux.NewRouter()
