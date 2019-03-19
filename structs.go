@@ -36,3 +36,11 @@ type MessageDelivery struct {
 	Message      *Message
 	RecipientIDs []int
 }
+
+// MessageGroup .
+type MessageGroup struct {
+	ID int64
+	DateCreated string
+	MemberIDs []int
+	Name string
+}

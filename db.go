@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 )
@@ -46,21 +47,21 @@ func init() {
 	db.Exec(`
 		CREATE TABLE IF NOT EXISTS client (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-			country_code VARCHAR (64) NOT NULL,
-			phone_number VARCHAR (64) NOT NULL,
-			verification_code VARCHAR (64),
+			country_code VARCHAR ( 64 ) NOT NULL,
+			phone_number VARCHAR ( 64 ) NOT NULL,
+			verification_code VARCHAR ( 64 ),
 			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (id),
-			UNIQUE KEY (country_code, phone_number)
+			PRIMARY KEY ( id ),
+			UNIQUE KEY ( country_code, phone_number )
 		);
 	`)
 
 	db.Exec(`
 		CREATE TABLE IF NOT EXISTS message_group (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-			name VARCHAR (32) NOT NULL,
+			name VARCHAR ( 32 ) NOT NULL,
 			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (id)
+			PRIMARY KEY ( id )
 		);
 	`)
 
@@ -71,11 +72,11 @@ func init() {
 			message_group_id INT UNSIGNED NOT NULL,
 			sender_id INT UNSIGNED NOT NULL,
 			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (id),
-			CONSTRAINT FOREIGN KEY (message_group_id) REFERENCES message_group (id)
+			PRIMARY KEY ( id ),
+			CONSTRAINT FOREIGN KEY ( message_group_id ) REFERENCES message_group ( id )
 				ON DELETE CASCADE
 				ON UPDATE CASCADE,
-			CONSTRAINT FOREIGN KEY (sender_id) REFERENCES client (id)
+			CONSTRAINT FOREIGN KEY ( sender_id ) REFERENCES client ( id )
 				ON DELETE CASCADE
 				ON UPDATE CASCADE
 		);
@@ -86,11 +87,11 @@ func init() {
 			message_group_id INT UNSIGNED NOT NULL,
 			member_id INT UNSIGNED NOT NULL,
 			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (message_group_id, member_id),
-			CONSTRAINT FOREIGN KEY (message_group_id) REFERENCES message_group (id)
+			PRIMARY KEY ( message_group_id, member_id ),
+			CONSTRAINT FOREIGN KEY ( message_group_id ) REFERENCES message_group ( id )
 				ON DELETE CASCADE
 				ON UPDATE CASCADE,
-			CONSTRAINT FOREIGN KEY (member_id) REFERENCES client (id)
+			CONSTRAINT FOREIGN KEY ( member_id ) REFERENCES client ( id )
 				ON DELETE CASCADE
 				ON UPDATE CASCADE
 		);
@@ -102,11 +103,11 @@ func init() {
 			recipient_id INT UNSIGNED NOT NULL,
 			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
 			date_delivered DATETIME,
-			PRIMARY KEY (message_id, recipient_id),
-			CONSTRAINT FOREIGN KEY (message_id) REFERENCES message (id)
+			PRIMARY KEY ( message_id, recipient_id ),
+			CONSTRAINT FOREIGN KEY ( message_id ) REFERENCES message ( id )
 				ON DELETE CASCADE
 				ON UPDATE CASCADE,
-			CONSTRAINT FOREIGN KEY (recipient_id) REFERENCES client (id)
+			CONSTRAINT FOREIGN KEY ( recipient_id ) REFERENCES client ( id )
 				ON DELETE CASCADE
 				ON UPDATE CASCADE
 		);
@@ -115,7 +116,7 @@ func init() {
 
 func createMessage(content string, messageGroupID, senderID int) (*Message, error) {
 	result, err := db.Exec(`
-		INSERT INTO message (content, message_group_id, sender_id) VALUES (?, ?, ?);
+		INSERT INTO message ( content, message_group_id, sender_id ) VALUES ( ?, ?, ? );
 	`, content, messageGroupID, senderID)
 
 	if err != nil {
@@ -149,7 +150,7 @@ func createMessage(content string, messageGroupID, senderID int) (*Message, erro
 
 func createReceipt(messageID, recipientID int) error {
 	_, err := db.Query(`
-		INSERT INTO receipt (message_id, recipient_id) VALUES (?, ?);
+		INSERT INTO receipt ( message_id, recipient_id ) VALUES ( ?, ? );
 	`, messageID, recipientID)
 
 	return err
@@ -171,7 +172,7 @@ func getOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
 	}
 
 	_, err := db.Exec(`
-		INSERT INTO client (country_code, phone_number) VALUES (?, ?)
+		INSERT INTO client ( country_code, phone_number ) VALUES ( ?, ? );
 	`, countryCode, phoneNumber)
 
 	if err != nil {
@@ -344,7 +345,7 @@ func isClientInMessageGroup(clientID, messageGroupID int) bool {
 	rows, err := db.Query(`
 		SELECT * FROM message_group_member
 		WHERE message_group_id = ? AND member_id = ?;
-	`, clientID, messageGroupID)
+	`, messageGroupID, clientID)
 
 	if err != nil {
 		return false
@@ -371,4 +372,84 @@ func updateReceiptDateDelivered(messageID, recipientID int) error {
 		WHERE message_id = ? AND recipient_id = ?;
 	`, messageID, recipientID)
 	return err
+}
+
+func createMessageGroup(groupName string, memberIds []int) (*MessageGroup, error) {
+	tx, err := db.Begin()
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	result, err := tx.Exec(
+		`INSERT INTO message_group ( name ) VALUES ( ? );`,
+		groupName,
+	)
+
+	if err != nil {
+		tx.Rollback()
+		log.Println(err)
+		return nil, err
+	}
+
+	groupId, err := result.LastInsertId()
+
+	if err != nil {
+		tx.Rollback()
+		log.Println(err)
+		return nil, err
+	}
+
+	for _, memberId := range memberIds {
+		result, err = tx.Exec(
+			`INSERT INTO message_group_member ( message_group_id, member_id )
+			VALUES ( ?, ? );`,
+			groupId,
+			memberId,
+		)
+
+		if err != nil {
+			tx.Rollback()
+			err := errors.New(
+				fmt.Sprintf("Failure creating new group `%v` in database", groupName),
+			)
+			log.Println(err)
+			return nil, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := db.Query(
+		`SELECT date_created FROM message_group WHERE id = ?;`,
+		groupId,
+	)
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if !rows.Next() {
+		errorMsg := "message_group `%v` has been added to the database but "
+		errorMsg += "an error occured when querying it"
+		log.Println(fmt.Sprintf(errorMsg, groupName))
+		return nil, errors.New(errorMsg)
+	}
+
+	var dateCreated string
+	rows.Scan(&dateCreated)
+
+	messageGroup := &MessageGroup{
+		ID:          groupId,
+		DateCreated: dateCreated,
+		MemberIDs:   memberIds,
+		Name:        groupName,
+	}
+
+	return messageGroup, nil
 }

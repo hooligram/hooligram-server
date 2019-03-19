@@ -53,6 +53,8 @@ func v2(w http.ResponseWriter, r *http.Request) {
 			handleVerificationRequestCodeRequest(conn, &action)
 		case verificationSubmitCodeRequest:
 			handleVerificationSubmitCodeRequest(conn, &action)
+		case groupCreateRequest:
+			handleGroupCreateRequest(conn, &action)
 		default:
 			log.Println("[V2] action type isn't supported")
 		}
@@ -332,4 +334,63 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 
 	verifyClient(client, conn, code)
 	writeEmptyAction(conn, verificationSubmitCodeSuccess)
+}
+
+func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
+
+	errors := []string{}
+	client, err := getClient(conn)
+
+	if err != nil {
+		errors = append(errors, err.Error())
+		writeFailure(conn, groupCreateFailure, errors)
+		return
+	}
+
+	groupName, groupNameOk := action.Payload["name"].(string)
+	_memberIds, memberIdsOk := action.Payload["member_ids"].([]interface{})
+
+	memberIds := make([]int, len(_memberIds))
+	for i, memberId := range _memberIds {
+		memberIds[i] = int(memberId.(float64))
+	}
+
+	if !groupNameOk {
+		errors = append(errors, "you need to include `name` in payload")
+	}
+	if !memberIdsOk {
+		errors = append(errors, "you need to include `member_ids` in payload")
+	}
+	if len(memberIds) < 1 {
+		errors = append(
+			errors,
+			"you need to include at least one member in `member_ids` in payload",
+		)
+	}
+	if !containsID(memberIds, client.ID) {
+		errors = append(
+			errors,
+			"you need to include at the group creator in `member_ids` in payload",
+		)
+	}
+
+	if len(errors) > 0 {
+		log.Println(errors)
+		writeFailure(conn, groupCreateFailure, errors)
+		return
+	}
+
+	messageGroup, err := createMessageGroup(groupName, memberIds)
+	if err != nil {
+		writeFailure(conn, groupCreateFailure, errors)
+	}
+
+	successAction := constructCreateGroupSuccessAction(
+		messageGroup.ID,
+		messageGroup.Name,
+		messageGroup.MemberIDs,
+		messageGroup.DateCreated,
+	)
+
+	client.writeJSON(successAction)
 }
