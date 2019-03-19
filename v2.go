@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -374,10 +375,9 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 }
 
 func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
-
 	errors := []string{}
-	client, err := getClient(conn)
 
+	client, err := getClient(conn)
 	if err != nil {
 		errors = append(errors, err.Error())
 		writeFailure(conn, groupCreateFailure, errors)
@@ -385,26 +385,29 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 	}
 
 	groupName, groupNameOk := action.Payload["name"].(string)
-	_memberIds, memberIdsOk := action.Payload["member_ids"].([]interface{})
+	_memberIDs, memberIDsOk := action.Payload["member_ids"].([]interface{})
+	memberIDs := make([]int, len(_memberIDs))
 
-	memberIds := make([]int, len(_memberIds))
-	for i, memberId := range _memberIds {
-		memberIds[i] = int(memberId.(float64))
+	for i, memberID := range _memberIDs {
+		memberIDs[i] = int(memberID.(float64))
 	}
 
 	if !groupNameOk {
 		errors = append(errors, "you need to include `name` in payload")
 	}
-	if !memberIdsOk {
+
+	if !memberIDsOk {
 		errors = append(errors, "you need to include `member_ids` in payload")
 	}
-	if len(memberIds) < 1 {
+
+	if len(memberIDs) < 1 {
 		errors = append(
 			errors,
 			"you need to include at least one member in `member_ids` in payload",
 		)
 	}
-	if !containsID(memberIds, client.ID) {
+
+	if !containsID(memberIDs, client.ID) {
 		errors = append(
 			errors,
 			"you need to include at the group creator in `member_ids` in payload",
@@ -417,7 +420,7 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 		return
 	}
 
-	messageGroup, err := createMessageGroup(groupName, memberIds)
+	messageGroup, err := createMessageGroup(groupName, memberIDs)
 	if err != nil {
 		writeFailure(conn, groupCreateFailure, errors)
 	}
