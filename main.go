@@ -10,6 +10,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const mainTag = "main"
+
 func main() {
 	defer db.Close()
 
@@ -41,7 +43,11 @@ func main() {
 func broadcast() {
 	for {
 		action := <-broadcastChan
-		verifiedClients := findAllVerifiedClients()
+		verifiedClients, err := findAllVerifiedClients()
+		if err != nil {
+			logInfo(mainTag, "error finding verified clients. "+err.Error())
+			continue
+		}
 
 		for _, verifiedClient := range verifiedClients {
 			var onlineConn *websocket.Conn

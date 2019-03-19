@@ -8,37 +8,34 @@ import (
 	"os"
 )
 
+const dbTag = "db"
+
 func init() {
 	dbUsername := os.Getenv("MYSQL_USERNAME")
-
 	if dbUsername == "" {
-		log.Println("[DB] MYSQL_USERNAME must be set.")
+		logInfo(dbTag, "MYSQL_USERNAME not set")
 	}
 
 	dbPassword := os.Getenv("MYSQL_PASSWORD")
-
 	if dbPassword == "" {
-		log.Println("[DB] MYSQL_PASSWORD must be set.")
+		logInfo(dbTag, "MYSQL_PASSWORD not set")
 	}
 
 	dbName := os.Getenv("MYSQL_DB_NAME")
-
 	if dbName == "" {
-		log.Println("[DB] MYSQL_DB_NAME must be set.")
+		logInfo(dbTag, "MYSQL_DB_NAME not set")
 	}
 
 	var err error
 	db, err = sql.Open("mysql", dbUsername+":"+dbPassword+"@/"+dbName)
-
 	if err != nil {
-		log.Println("[DB] Error setting up MySQL DB connection.")
+		logInfo(dbTag, "mysql connection setup error. "+err.Error())
 		return
 	}
 
 	err = db.Ping()
-
 	if err != nil {
-		log.Println("[DB] Can't connect to MySQL DB.")
+		logInfo(dbTag, "mysql connection error. "+err.Error())
 		return
 	}
 
@@ -158,31 +155,32 @@ func createReceipt(messageID, recipientID int) error {
 
 func getOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
 	if countryCode != getDigits(countryCode) {
-		return nil, errors.New("hey, countryCode should only contain digits")
+		return nil, errors.New("country code should only contain digits")
 	}
 
 	if phoneNumber != getDigits(phoneNumber) {
-		return nil, errors.New("hey, phoneNumber should only contain digits")
+		return nil, errors.New("phone number should only contain digits")
 	}
 
-	client, ok := findClient(countryCode, phoneNumber)
+	client, err := findClient(countryCode, phoneNumber)
+	if err != nil {
+		return nil, err
+	}
 
-	if ok {
+	if client != nil {
 		return client, nil
 	}
 
-	_, err := db.Exec(`
+	_, err = db.Exec(`
 		INSERT INTO client ( country_code, phone_number ) VALUES ( ?, ? );
 	`, countryCode, phoneNumber)
-
 	if err != nil {
-		return nil, errors.New("i failed to create the client")
+		return nil, err
 	}
 
-	client, ok = findClient(countryCode, phoneNumber)
-
-	if !ok {
-		return nil, errors.New("i failed to find the created client")
+	client, err = findClient(countryCode, phoneNumber)
+	if err != nil {
+		return nil, err
 	}
 
 	return client, nil
@@ -209,7 +207,7 @@ func findAllMessageGroupMemberIDs(messageGroupID int) ([]int, error) {
 	return memberIDs, nil
 }
 
-func findAllVerifiedClients() []*Client {
+func findAllVerifiedClients() ([]*Client, error) {
 	rows, err := db.Query(`
 		SELECT *
 		FROM client
@@ -218,8 +216,8 @@ func findAllVerifiedClients() []*Client {
 	clients := []*Client{}
 
 	if err != nil {
-		log.Println("[DB] Failed to find all verified clients.")
-		return clients
+		logInfo(dbTag, "failed to find verified clients. "+err.Error())
+		return clients, err
 	}
 
 	for rows.Next() {
@@ -239,10 +237,10 @@ func findAllVerifiedClients() []*Client {
 		clients = append(clients, &client)
 	}
 
-	return clients
+	return clients, nil
 }
 
-func findClient(countryCode, phoneNumber string) (*Client, bool) {
+func findClient(countryCode, phoneNumber string) (*Client, error) {
 	rows, err := db.Query(`
 		SELECT *
 		FROM client
@@ -253,13 +251,12 @@ func findClient(countryCode, phoneNumber string) (*Client, bool) {
 	`, countryCode, phoneNumber)
 
 	if err != nil {
-		log.Println("[DB] i failed to find the client")
-		log.Println("[DB]", err.Error())
-		return nil, false
+		logInfo(dbTag, "failed to find client. "+err.Error())
+		return nil, err
 	}
 
 	if !rows.Next() {
-		return nil, false
+		return nil, nil
 	}
 
 	var id int
@@ -275,7 +272,7 @@ func findClient(countryCode, phoneNumber string) (*Client, bool) {
 		DateCreated:      dateCreated,
 	}
 
-	return client, true
+	return client, nil
 }
 
 func findUndeliveredMessages(recipientID int) ([]*Message, error) {
@@ -318,12 +315,11 @@ func findVerifiedClient(countryCode, phoneNumber, verificationCode string) (*Cli
 	`, countryCode, phoneNumber, verificationCode)
 
 	if err != nil {
-		log.Println("[DB] Find client failed.")
+		logInfo(dbTag, "failed to find client. "+err.Error())
 		return nil, false
 	}
 
 	if !rows.Next() {
-		log.Println("[DB] Couldn't find such client.")
 		return nil, false
 	}
 
