@@ -381,6 +381,9 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 	}
 
 	messageGroup, err := createMessageGroup(groupName, memberIds)
+	if err != nil {
+		writeFailure(conn, groupCreateFailure, errors)
+	}
 
 	successAction := constructCreateGroupSuccessAction(
 		messageGroup.ID,

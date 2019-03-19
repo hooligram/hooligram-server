@@ -420,9 +420,8 @@ func createMessageGroup(groupName string, memberIds []int) (*MessageGroup, error
 	}
 
 	err = tx.Commit()
-
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	rows, err := db.Query(
