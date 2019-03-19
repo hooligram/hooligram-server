@@ -19,6 +19,7 @@ type Client struct {
 	DateCreated      string
 
 	IsSignedIn bool
+	SessionID  string
 	conn       *websocket.Conn
 }
 
@@ -39,8 +40,9 @@ type MessageDelivery struct {
 
 // MessageGroup .
 type MessageGroup struct {
-	ID int64
+	ID          int64
+	Name        string
 	DateCreated string
+
 	MemberIDs []int
-	Name string
 }

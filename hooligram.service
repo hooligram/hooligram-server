@@ -1,0 +1,16 @@
+[Unit]
+Description=Hooligram Server
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+ExecStart=?
+Environment=PORT=8080
+Environment=TWILIO_API_KEY=?
+Environment=MYSQL_DB_NAME=?
+Environment=MYSQL_USERNAME=?
+Environment=MYSQL_PASSWORD=?
+
+[Install]
+WantedBy=multi-user.target

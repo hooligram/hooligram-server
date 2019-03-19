@@ -1,9 +1,12 @@
 package main
 
 import (
+	"math/rand"
 	"regexp"
+	"strconv"
 
 	"github.com/gorilla/websocket"
+	"github.com/hooligram/logger"
 )
 
 func constructBroadcastAction(source *Client, message string) *Action {
@@ -35,22 +38,22 @@ func constructDeliverMessageAction(message *Message) *Action {
 }
 
 func constructCreateGroupSuccessAction(
-	groupId int64,
+	groupID int64,
 	groupName string,
-	memberIds []int,
+	memberIDs []int,
 	dateCreated string,
 ) *Action {
 	payload := make(map[string]interface{})
-	memberIds = append([]int(nil), memberIds...)
+	memberIDs = append([]int(nil), memberIDs...)
 
-	payload["id"] = groupId
+	payload["id"] = groupID
 	payload["date_created"] = dateCreated
-	payload["member_ids"] = memberIds
+	payload["member_ids"] = memberIDs
 	payload["name"] = groupName
 
 	return &Action{
 		Payload: payload,
-		Type: groupCreateSuccess,
+		Type:    groupCreateSuccess,
 	}
 }
 
@@ -64,9 +67,48 @@ func containsID(ids []int, id int) bool {
 	return false
 }
 
+func generateSessionID() string {
+	var runes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	sessionID := make([]rune, 8)
+
+	for i := range sessionID {
+		sessionID[i] = runes[rand.Intn(len(runes))]
+	}
+
+	return string(sessionID)
+}
+
 func getDigits(s string) string {
 	re := regexp.MustCompile("[^0-9]")
 	return re.ReplaceAllString(s, "")
+}
+
+func logBody(filePath string, text string) {
+	logger.Body(
+		[]string{filePath},
+		text,
+	)
+}
+
+func logClose(client *Client, action *Action) {
+	logger.Close(
+		[]string{client.SessionID, strconv.Itoa(client.ID), action.Type},
+		action.Payload,
+	)
+}
+
+func logInfo(filePath string, text string) {
+	logger.Info(
+		[]string{filePath},
+		text,
+	)
+}
+
+func logOpen(client *Client, action *Action) {
+	logger.Open(
+		[]string{client.SessionID, strconv.Itoa(client.ID), action.Type},
+		action.Payload,
+	)
 }
 
 func writeFailure(conn *websocket.Conn, actionType string, errors []string) {

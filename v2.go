@@ -2,47 +2,75 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 )
 
+const v2Tag = "v2"
+
 func v2(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
-
 	if err != nil {
-		log.Println("[V2] Failed to upgrade to WebSocket connection.")
+		logInfo(v2Tag, "websocket upgrade failed. "+err.Error())
 		return
 	}
 
-	clients[conn] = &Client{}
+	clients[conn] = &Client{
+		SessionID: generateSessionID(),
+		conn:      conn,
+	}
 	defer delete(clients, conn)
 	defer conn.Close()
 
 	for {
+		client := clients[conn]
+
+		var p []byte
+		_, p, err = conn.ReadMessage()
+		if err != nil {
+			logInfo(
+				v2Tag,
+				fmt.Sprintf("connection error. client id %v. %v", client.ID, err.Error()),
+			)
+			return
+		}
+
 		action := Action{}
-		err = conn.ReadJSON(&action)
+		err = json.Unmarshal(p, &action)
 
 		if err != nil {
-			log.Println("[V2] Error reading JSON.")
-			break
+			logInfo(
+				v2Tag,
+				fmt.Sprintf("error reading json. client id %v. %v", client.ID, err.Error()),
+			)
+			continue
 		}
 
 		if action.Type == "" {
-			log.Println("[V2] action type is missing")
+			logInfo(
+				v2Tag,
+				fmt.Sprintf("action type missing. client id %v. %v", client.ID, err.Error()),
+			)
 			continue
 		}
 
 		if action.Payload == nil {
-			log.Println("[V2] action payload is missing")
+			logInfo(
+				v2Tag,
+				fmt.Sprintf("action payload missing. client id %v. %v", client.ID, err.Error()),
+			)
 			continue
 		}
 
+		logOpen(client, &action)
+		var result *Action
+
 		switch action.Type {
 		case authorizationSignInRequest:
-			handleAuthorizationSignInRequest(conn, &action)
+			result = handleAuthorizationSignInRequest(conn, &action)
 		case messagingSendRequest:
 			handleMessagingSendRequest(conn, &action)
 		case messagingDeliverSuccess:
@@ -56,22 +84,29 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		case groupCreateRequest:
 			handleGroupCreateRequest(conn, &action)
 		default:
-			log.Println("[V2] action type isn't supported")
+		}
+
+		if result != nil {
+			logClose(client, &action)
 		}
 	}
 }
 
-func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
+func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) *Action {
 	countryCode := action.Payload["country_code"].(string)
 	phoneNumber := action.Payload["phone_number"].(string)
 	verificationCode := action.Payload["code"].(string)
 	client, err := signIn(conn, countryCode, phoneNumber, verificationCode)
 
 	if err != nil {
-		log.Println("[V2] Couldn't sign in client.")
-		log.Println("[V2]", err.Error())
-		writeFailure(conn, authorizationSignInFailure, []string{"couldn't sign in you"})
-		return
+		writeFailure(conn, authorizationSignInFailure, []string{"sign in failed"})
+		logBody(v2Tag, fmt.Sprintf("couldn't sign in client. %v", err.Error()))
+		return &Action{
+			Payload: map[string]interface{}{
+				"errors": []string{"sign in failed"},
+			},
+			Type: authorizationSignInFailure,
+		}
 	}
 
 	writeQueuedActions(client)
@@ -80,13 +115,15 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) {
 
 	undeliveredMessages, err := findUndeliveredMessages(client.ID)
 	if err != nil {
-		log.Println("failed to find undelivered message ids")
+		logBody(v2Tag, "error finding messages to deliver. "+err.Error())
 	}
 
 	for _, undeliveredMessage := range undeliveredMessages {
 		action := constructDeliverMessageAction(undeliveredMessage)
 		client.writeJSON(action)
 	}
+
+	return action
 }
 
 func handleMessagingSendRequest(conn *websocket.Conn, action *Action) {
@@ -337,10 +374,9 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 }
 
 func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
-
 	errors := []string{}
-	client, err := getClient(conn)
 
+	client, err := getClient(conn)
 	if err != nil {
 		errors = append(errors, err.Error())
 		writeFailure(conn, groupCreateFailure, errors)
@@ -348,26 +384,29 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 	}
 
 	groupName, groupNameOk := action.Payload["name"].(string)
-	_memberIds, memberIdsOk := action.Payload["member_ids"].([]interface{})
+	memberIDsPayload, memberIDsOk := action.Payload["member_ids"].([]interface{})
+	memberIDs := make([]int, len(memberIDsPayload))
 
-	memberIds := make([]int, len(_memberIds))
-	for i, memberId := range _memberIds {
-		memberIds[i] = int(memberId.(float64))
+	for i, memberID := range memberIDsPayload {
+		memberIDs[i] = int(memberID.(float64))
 	}
 
 	if !groupNameOk {
 		errors = append(errors, "you need to include `name` in payload")
 	}
-	if !memberIdsOk {
+
+	if !memberIDsOk {
 		errors = append(errors, "you need to include `member_ids` in payload")
 	}
-	if len(memberIds) < 1 {
+
+	if len(memberIDs) < 1 {
 		errors = append(
 			errors,
 			"you need to include at least one member in `member_ids` in payload",
 		)
 	}
-	if !containsID(memberIds, client.ID) {
+
+	if !containsID(memberIDs, client.ID) {
 		errors = append(
 			errors,
 			"you need to include at the group creator in `member_ids` in payload",
@@ -375,12 +414,18 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 	}
 
 	if len(errors) > 0 {
-		log.Println(errors)
+		errorText := ""
+
+		for _, err := range errors {
+			errorText += " " + err
+		}
+
+		logInfo(v2Tag, errorText)
 		writeFailure(conn, groupCreateFailure, errors)
 		return
 	}
 
-	messageGroup, err := createMessageGroup(groupName, memberIds)
+	messageGroup, err := createMessageGroup(groupName, memberIDs)
 	if err != nil {
 		writeFailure(conn, groupCreateFailure, errors)
 	}
