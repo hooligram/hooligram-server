@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -370,11 +369,10 @@ func updateReceiptDateDelivered(messageID, recipientID int) error {
 	return err
 }
 
-func createMessageGroup(groupName string, memberIds []int) (*MessageGroup, error) {
+func createMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error) {
 	tx, err := db.Begin()
-
 	if err != nil {
-		log.Println(err)
+		logInfo(dbTag, "transaction error. "+err.Error())
 		return nil, err
 	}
 
@@ -382,58 +380,55 @@ func createMessageGroup(groupName string, memberIds []int) (*MessageGroup, error
 		`INSERT INTO message_group ( name ) VALUES ( ? );`,
 		groupName,
 	)
-
 	if err != nil {
 		tx.Rollback()
-		log.Println(err)
+		logInfo(dbTag, "error creating message group. "+err.Error())
 		return nil, err
 	}
 
-	groupId, err := result.LastInsertId()
-
+	groupID, err := result.LastInsertId()
 	if err != nil {
 		tx.Rollback()
-		log.Println(err)
+		logInfo(dbTag, "error creating message group. "+err.Error())
 		return nil, err
 	}
 
-	for _, memberId := range memberIds {
+	for _, memberID := range memberIDs {
 		result, err = tx.Exec(
 			`INSERT INTO message_group_member ( message_group_id, member_id )
 			VALUES ( ?, ? );`,
-			groupId,
-			memberId,
+			groupID,
+			memberID,
 		)
-
 		if err != nil {
 			tx.Rollback()
-			err := errors.New(
-				fmt.Sprintf("Failure creating new group `%v` in database", groupName),
+			logInfo(
+				dbTag,
+				fmt.Sprintf("failed to create message group %v in db. %v", groupName, err.Error()),
 			)
-			log.Println(err)
 			return nil, err
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
+		logInfo(dbTag, "error committing transaction. "+err.Error())
 		return nil, err
 	}
 
 	rows, err := db.Query(
 		`SELECT date_created FROM message_group WHERE id = ?;`,
-		groupId,
+		groupID,
 	)
-
 	if err != nil {
-		log.Println(err)
+		logInfo(dbTag, "error retrieving message group. "+err.Error())
 		return nil, err
 	}
 
 	if !rows.Next() {
 		errorMsg := "message_group `%v` has been added to the database but "
 		errorMsg += "an error occured when querying it"
-		log.Println(fmt.Sprintf(errorMsg, groupName))
+		logInfo(dbTag, fmt.Sprintf(errorMsg, groupName))
 		return nil, errors.New(errorMsg)
 	}
 
@@ -441,9 +436,9 @@ func createMessageGroup(groupName string, memberIds []int) (*MessageGroup, error
 	rows.Scan(&dateCreated)
 
 	messageGroup := &MessageGroup{
-		ID:          groupId,
+		ID:          groupID,
 		DateCreated: dateCreated,
-		MemberIDs:   memberIds,
+		MemberIDs:   memberIDs,
 		Name:        groupName,
 	}
 
