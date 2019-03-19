@@ -1,11 +1,12 @@
 package main
 
 import (
-	"log"
 	"math/rand"
 	"regexp"
+	"strconv"
 
 	"github.com/gorilla/websocket"
+	"github.com/hooligram/logger"
 )
 
 func constructBroadcastAction(source *Client, message string) *Action {
@@ -82,16 +83,32 @@ func getDigits(s string) string {
 	return re.ReplaceAllString(s, "")
 }
 
-func logClose(client *Client, action *Action) {
-	log.Printf("=== [%v] [%v] [%v] [%v]\n", client.SessionID, client.ID, action.Type, action.Payload)
+func logBody(filePath string, text string) {
+	logger.Body(
+		[]string{filePath},
+		text,
+	)
 }
 
-func logInfo(tag, text string) {
-	log.Printf("--- [%v] %v", tag, text)
+func logClose(client *Client, action *Action) {
+	logger.Close(
+		[]string{client.SessionID, strconv.Itoa(client.ID), action.Type},
+		action.Payload,
+	)
+}
+
+func logInfo(filePath string, text string) {
+	logger.Info(
+		[]string{filePath},
+		text,
+	)
 }
 
 func logOpen(client *Client, action *Action) {
-	log.Printf(">>> [%v] [%v] [%v] [%v]\n", client.SessionID, client.ID, action.Type, action.Payload)
+	logger.Open(
+		[]string{client.SessionID, strconv.Itoa(client.ID), action.Type},
+		action.Payload,
+	)
 }
 
 func writeFailure(conn *websocket.Conn, actionType string, errors []string) {

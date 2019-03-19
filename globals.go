@@ -51,9 +51,12 @@ func signIn(
 		return nil, errors.New("couldn't find such verified client")
 	}
 
-	client.conn = conn
-	client.IsSignedIn = true
-	clients[conn] = client
+	clients[conn].ID = client.ID
+	clients[conn].CountryCode = client.CountryCode
+	clients[conn].PhoneNumber = client.PhoneNumber
+	clients[conn].VerificationCode = verificationCode
+	clients[conn].DateCreated = client.DateCreated
+	clients[conn].IsSignedIn = true
 
 	return clients[conn], nil
 }
@@ -74,9 +77,8 @@ func verifyClient(client *Client, conn *websocket.Conn, verificationCode string)
 		return err
 	}
 
-	client.VerificationCode = verificationCode
-	client.conn = conn
-	clients[conn] = client
+	clients[conn].VerificationCode = verificationCode
+
 	return nil
 }
 

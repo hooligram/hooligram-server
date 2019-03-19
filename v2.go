@@ -22,6 +22,7 @@ func v2(w http.ResponseWriter, r *http.Request) {
 
 	clients[conn] = &Client{
 		SessionID: generateSessionID(),
+		conn:      conn,
 	}
 	defer delete(clients, conn)
 	defer conn.Close()
@@ -83,7 +84,9 @@ func v2(w http.ResponseWriter, r *http.Request) {
 			log.Println("client id", client.ID)
 		}
 
-		logClose(client, result)
+		if result != nil {
+			logClose(client, &action)
+		}
 	}
 }
 
@@ -95,7 +98,7 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) *Act
 
 	if err != nil {
 		writeFailure(conn, authorizationSignInFailure, []string{"sign in failed"})
-		logInfo(tag, fmt.Sprintf("couldn't sign in client. %v", err.Error()))
+		logBody(tag, fmt.Sprintf("couldn't sign in client. %v", err.Error()))
 		return &Action{
 			Payload: map[string]interface{}{
 				"errors": []string{"sign in failed"},
