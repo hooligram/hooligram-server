@@ -3,9 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
 )
+
+const apiTag = "api"
 
 func getTwilioVerificationCheck(countryCode, phoneNumber, verificationCode string) (*http.Response, error) {
 	url := "https://api.authy.com/protected/json/phones/verification/check"
@@ -38,14 +39,14 @@ func postTwilioVerificationStart(countryCode, phoneNumber string) (*http.Respons
 	})
 
 	if err != nil {
-		log.Println("[API] Failed to construct Twilio verification start JSON body.")
+		logInfo(apiTag, "failed to construct twilio verification json")
 		return nil, err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 
 	if err != nil {
-		log.Println("[API] Failed to create Twilio verification start POST request.")
+		logInfo(apiTag, "failed to create twilio verification request")
 		return nil, err
 	}
 
@@ -54,7 +55,7 @@ func postTwilioVerificationStart(countryCode, phoneNumber string) (*http.Respons
 	resp, err := httpClient.Do(req)
 
 	if err != nil {
-		log.Println("[API] Failed to do Twilio verification start API call.")
+		logInfo(apiTag, "failed to make twilio verification api call")
 		return nil, err
 	}
 

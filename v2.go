@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const tag = "v2"
+const v2Tag = "v2"
 
 func v2(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -98,7 +98,7 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) *Act
 
 	if err != nil {
 		writeFailure(conn, authorizationSignInFailure, []string{"sign in failed"})
-		logBody(tag, fmt.Sprintf("couldn't sign in client. %v", err.Error()))
+		logBody(v2Tag, fmt.Sprintf("couldn't sign in client. %v", err.Error()))
 		return &Action{
 			Payload: map[string]interface{}{
 				"errors": []string{"sign in failed"},
