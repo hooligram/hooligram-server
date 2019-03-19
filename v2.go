@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -385,10 +384,10 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 	}
 
 	groupName, groupNameOk := action.Payload["name"].(string)
-	_memberIDs, memberIDsOk := action.Payload["member_ids"].([]interface{})
-	memberIDs := make([]int, len(_memberIDs))
+	memberIDsPayload, memberIDsOk := action.Payload["member_ids"].([]interface{})
+	memberIDs := make([]int, len(memberIDsPayload))
 
-	for i, memberID := range _memberIDs {
+	for i, memberID := range memberIDsPayload {
 		memberIDs[i] = int(memberID.(float64))
 	}
 
@@ -415,7 +414,13 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 	}
 
 	if len(errors) > 0 {
-		log.Println(errors)
+		errorText := ""
+
+		for _, err := range errors {
+			errorText += " " + err
+		}
+
+		logInfo(v2Tag, errorText)
 		writeFailure(conn, groupCreateFailure, errors)
 		return
 	}
