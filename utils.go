@@ -38,22 +38,22 @@ func constructDeliverMessageAction(message *Message) *Action {
 }
 
 func constructCreateGroupSuccessAction(
-	groupId int64,
+	groupID int64,
 	groupName string,
-	memberIds []int,
+	memberIDs []int,
 	dateCreated string,
 ) *Action {
 	payload := make(map[string]interface{})
-	memberIds = append([]int(nil), memberIds...)
+	memberIDs = append([]int(nil), memberIDs...)
 
-	payload["id"] = groupId
+	payload["id"] = groupID
 	payload["date_created"] = dateCreated
-	payload["member_ids"] = memberIds
+	payload["member_ids"] = memberIDs
 	payload["name"] = groupName
 
 	return &Action{
 		Payload: payload,
-		Type: groupCreateSuccess,
+		Type:    groupCreateSuccess,
 	}
 }
 
