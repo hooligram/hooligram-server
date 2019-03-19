@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -14,9 +13,8 @@ const v2Tag = "v2"
 
 func v2(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
-
 	if err != nil {
-		log.Println("[v2] upgrade to websocket failed")
+		logInfo(v2Tag, "websocket upgrade failed. "+err.Error())
 		return
 	}
 
@@ -33,9 +31,10 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		var p []byte
 		_, p, err = conn.ReadMessage()
 		if err != nil {
-			log.Println("[v2] connection error")
-			log.Println("client id", client.ID)
-			log.Println(err.Error())
+			logInfo(
+				v2Tag,
+				fmt.Sprintf("connection error. client id %v. %v", client.ID, err.Error()),
+			)
 			return
 		}
 
@@ -43,21 +42,26 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		err = json.Unmarshal(p, &action)
 
 		if err != nil {
-			log.Println("[v2] error reading json")
-			log.Println("client id", client.ID)
-			log.Println(err.Error())
+			logInfo(
+				v2Tag,
+				fmt.Sprintf("error reading json. client id %v. %v", client.ID, err.Error()),
+			)
 			continue
 		}
 
 		if action.Type == "" {
-			log.Println("[v2] missing action type")
-			log.Println("client id", client.ID)
+			logInfo(
+				v2Tag,
+				fmt.Sprintf("action type missing. client id %v. %v", client.ID, err.Error()),
+			)
 			continue
 		}
 
 		if action.Payload == nil {
-			log.Println("[v2] missing action payload")
-			log.Println("client id", client.ID)
+			logInfo(
+				v2Tag,
+				fmt.Sprintf("action payload missing. client id %v. %v", client.ID, err.Error()),
+			)
 			continue
 		}
 
@@ -80,8 +84,6 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		case groupCreateRequest:
 			handleGroupCreateRequest(conn, &action)
 		default:
-			log.Println("[v2] unknown action type")
-			log.Println("client id", client.ID)
 		}
 
 		if result != nil {
@@ -113,7 +115,7 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) *Act
 
 	undeliveredMessages, err := findUndeliveredMessages(client.ID)
 	if err != nil {
-		log.Println("failed to find undelivered message ids")
+		logBody(v2Tag, "error finding messages to deliver. "+err.Error())
 	}
 
 	for _, undeliveredMessage := range undeliveredMessages {
