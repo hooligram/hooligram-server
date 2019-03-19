@@ -376,7 +376,7 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 
 	if len(errors) > 0 {
 		log.Println(errors)
-		writeFailure(conn, verificationSubmitCodeFailure, errors)
+		writeFailure(conn, groupCreateFailure, errors)
 		return
 	}
 
