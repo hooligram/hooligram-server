@@ -259,6 +259,8 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) 
 	}
 
 	client, err := getOrCreateClient(countryCode, phoneNumber)
+	clients[conn].CountryCode = countryCode
+	clients[conn].PhoneNumber = phoneNumber
 
 	if err != nil {
 		errors = append(errors, err.Error())
