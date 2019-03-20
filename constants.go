@@ -9,10 +9,6 @@ const (
 	groupCreateRequest = "GROUP_CREATE_REQUEST"
 	groupCreateSuccess = "GROUP_CREATE_SUCCESS"
 
-	messagingBroadcastFailure = "MESSAGING_BROADCAST_FAILURE"
-	messagingBroadcastRequest = "MESSAGING_BROADCAST_REQUEST"
-	messagingBroadcastSuccess = "MESSAGING_BROADCAST_SUCCESS"
-
 	messagingDeliverFailure = "MESSAGING_DELIVER_FAILURE"
 	messagingDeliverRequest = "MESSAGING_DELIVER_REQUEST"
 	messagingDeliverSuccess = "MESSAGING_DELIVER_SUCCESS"

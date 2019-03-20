@@ -8,7 +8,6 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
 
 const mainTag = "main"
@@ -33,46 +32,9 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/v2", v2)
 
-	go broadcast()
 	go deliverMessage()
 
 	http.ListenAndServe(":"+port, router)
-}
-
-func broadcast() {
-	for {
-		action := <-broadcastChan
-		verifiedClients, err := findAllVerifiedClients()
-		if err != nil {
-			logInfo(mainTag, "error finding verified clients. "+err.Error())
-			continue
-		}
-
-		for _, verifiedClient := range verifiedClients {
-			var onlineConn *websocket.Conn
-
-			for conn, client := range clients {
-				if client.CountryCode == verifiedClient.CountryCode &&
-					client.PhoneNumber == verifiedClient.PhoneNumber &&
-					client.IsSignedIn {
-					onlineConn = conn
-				}
-			}
-
-			if onlineConn == nil {
-				if _, ok := pendingActionQueue[verifiedClient]; !ok {
-					pendingActionQueue[verifiedClient] = []*Action{}
-				}
-
-				pendingActions := pendingActionQueue[verifiedClient]
-				pendingActions = append(pendingActions, action)
-				pendingActionQueue[verifiedClient] = pendingActions
-				continue
-			}
-
-			onlineConn.WriteJSON(action)
-		}
-	}
 }
 
 func deliverMessage() {

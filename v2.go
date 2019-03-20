@@ -71,18 +71,16 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		switch action.Type {
 		case authorizationSignInRequest:
 			result = handleAuthorizationSignInRequest(conn, &action)
+		case groupCreateRequest:
+			handleGroupCreateRequest(conn, &action)
 		case messagingSendRequest:
 			handleMessagingSendRequest(conn, &action)
 		case messagingDeliverSuccess:
 			handleMessagingDeliverSuccess(conn, &action)
-		case messagingBroadcastRequest:
-			handleMessagingBroadcastRequest(conn, &action)
 		case verificationRequestCodeRequest:
 			handleVerificationRequestCodeRequest(conn, &action)
 		case verificationSubmitCodeRequest:
 			handleVerificationSubmitCodeRequest(conn, &action)
-		case groupCreateRequest:
-			handleGroupCreateRequest(conn, &action)
 		default:
 		}
 
@@ -124,6 +122,73 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) *Act
 	}
 
 	return action
+}
+
+func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
+	errors := []string{}
+
+	client, err := getClient(conn)
+	if err != nil {
+		errors = append(errors, err.Error())
+		writeFailure(conn, groupCreateFailure, errors)
+		return
+	}
+
+	groupName, groupNameOk := action.Payload["name"].(string)
+	memberIDsPayload, memberIDsOk := action.Payload["member_ids"].([]interface{})
+	memberIDs := make([]int, len(memberIDsPayload))
+
+	for i, memberID := range memberIDsPayload {
+		memberIDs[i] = int(memberID.(float64))
+	}
+
+	if !groupNameOk {
+		errors = append(errors, "you need to include `name` in payload")
+	}
+
+	if !memberIDsOk {
+		errors = append(errors, "you need to include `member_ids` in payload")
+	}
+
+	if len(memberIDs) < 1 {
+		errors = append(
+			errors,
+			"you need to include at least one member in `member_ids` in payload",
+		)
+	}
+
+	if !containsID(memberIDs, client.ID) {
+		errors = append(
+			errors,
+			"you need to include at the group creator in `member_ids` in payload",
+		)
+	}
+
+	if len(errors) > 0 {
+		errorText := ""
+
+		for _, err := range errors {
+			errorText += " " + err
+		}
+
+		logInfo(v2Tag, errorText)
+		writeFailure(conn, groupCreateFailure, errors)
+		return
+	}
+
+	messageGroup, err := createMessageGroup(groupName, memberIDs)
+	if err != nil {
+		writeFailure(conn, groupCreateFailure, errors)
+	}
+
+	successAction := constructCreateGroupSuccessAction(
+		messageGroup.ID,
+		messageGroup.Name,
+		messageGroup.MemberIDs,
+		messageGroup.DateCreated,
+	)
+
+	client.writeJSON(successAction)
 }
 
 func handleMessagingSendRequest(conn *websocket.Conn, action *Action) {
@@ -219,24 +284,6 @@ func handleMessagingDeliverSuccess(conn *websocket.Conn, action *Action) {
 		client.writeFailure(messagingDeliverFailure, []string{err.Error()})
 		return
 	}
-}
-
-func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
-	client, err := getSignedInClient(conn)
-
-	if err != nil {
-		client.writeFailure(messagingBroadcastFailure, []string{err.Error()})
-		return
-	}
-
-	message, ok := action.Payload["message"].(string)
-
-	if !ok {
-		client.writeFailure(messagingBroadcastFailure, []string{"you forgot your message"})
-		return
-	}
-
-	broadcastChan <- constructBroadcastAction(client, message)
 }
 
 func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) {
@@ -373,71 +420,4 @@ func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *Action) {
 
 	verifyClient(client, conn, code)
 	writeEmptyAction(conn, verificationSubmitCodeSuccess)
-}
-
-func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
-	errors := []string{}
-
-	client, err := getClient(conn)
-	if err != nil {
-		errors = append(errors, err.Error())
-		writeFailure(conn, groupCreateFailure, errors)
-		return
-	}
-
-	groupName, groupNameOk := action.Payload["name"].(string)
-	memberIDsPayload, memberIDsOk := action.Payload["member_ids"].([]interface{})
-	memberIDs := make([]int, len(memberIDsPayload))
-
-	for i, memberID := range memberIDsPayload {
-		memberIDs[i] = int(memberID.(float64))
-	}
-
-	if !groupNameOk {
-		errors = append(errors, "you need to include `name` in payload")
-	}
-
-	if !memberIDsOk {
-		errors = append(errors, "you need to include `member_ids` in payload")
-	}
-
-	if len(memberIDs) < 1 {
-		errors = append(
-			errors,
-			"you need to include at least one member in `member_ids` in payload",
-		)
-	}
-
-	if !containsID(memberIDs, client.ID) {
-		errors = append(
-			errors,
-			"you need to include at the group creator in `member_ids` in payload",
-		)
-	}
-
-	if len(errors) > 0 {
-		errorText := ""
-
-		for _, err := range errors {
-			errorText += " " + err
-		}
-
-		logInfo(v2Tag, errorText)
-		writeFailure(conn, groupCreateFailure, errors)
-		return
-	}
-
-	messageGroup, err := createMessageGroup(groupName, memberIDs)
-	if err != nil {
-		writeFailure(conn, groupCreateFailure, errors)
-	}
-
-	successAction := constructCreateGroupSuccessAction(
-		messageGroup.ID,
-		messageGroup.Name,
-		messageGroup.MemberIDs,
-		messageGroup.DateCreated,
-	)
-
-	client.writeJSON(successAction)
 }

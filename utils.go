@@ -9,34 +9,6 @@ import (
 	"github.com/hooligram/logger"
 )
 
-func constructBroadcastAction(source *Client, message string) *Action {
-	sender := make(map[string]string)
-	sender["country_code"] = source.CountryCode
-	sender["phone_number"] = source.PhoneNumber
-
-	payload := make(map[string]interface{})
-	payload["message"] = message
-	payload["sender"] = sender
-
-	return &Action{
-		Payload: payload,
-		Type:    messagingBroadcastSuccess,
-	}
-}
-
-func constructDeliverMessageAction(message *Message) *Action {
-	payload := make(map[string]interface{})
-	payload["content"] = message.Content
-	payload["date_created"] = message.DateCreated
-	payload["id"] = message.ID
-	payload["sender_id"] = message.SenderID
-
-	return &Action{
-		Payload: payload,
-		Type:    messagingDeliverRequest,
-	}
-}
-
 func constructCreateGroupSuccessAction(
 	groupID int64,
 	groupName string,
@@ -54,6 +26,19 @@ func constructCreateGroupSuccessAction(
 	return &Action{
 		Payload: payload,
 		Type:    groupCreateSuccess,
+	}
+}
+
+func constructDeliverMessageAction(message *Message) *Action {
+	payload := make(map[string]interface{})
+	payload["content"] = message.Content
+	payload["date_created"] = message.DateCreated
+	payload["id"] = message.ID
+	payload["sender_id"] = message.SenderID
+
+	return &Action{
+		Payload: payload,
+		Type:    messagingDeliverRequest,
 	}
 }
 
