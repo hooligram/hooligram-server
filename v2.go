@@ -75,8 +75,6 @@ func v2(w http.ResponseWriter, r *http.Request) {
 			handleMessagingSendRequest(conn, &action)
 		case messagingDeliverSuccess:
 			handleMessagingDeliverSuccess(conn, &action)
-		case messagingBroadcastRequest:
-			handleMessagingBroadcastRequest(conn, &action)
 		case verificationRequestCodeRequest:
 			handleVerificationRequestCodeRequest(conn, &action)
 		case verificationSubmitCodeRequest:
@@ -219,24 +217,6 @@ func handleMessagingDeliverSuccess(conn *websocket.Conn, action *Action) {
 		client.writeFailure(messagingDeliverFailure, []string{err.Error()})
 		return
 	}
-}
-
-func handleMessagingBroadcastRequest(conn *websocket.Conn, action *Action) {
-	client, err := getSignedInClient(conn)
-
-	if err != nil {
-		client.writeFailure(messagingBroadcastFailure, []string{err.Error()})
-		return
-	}
-
-	message, ok := action.Payload["message"].(string)
-
-	if !ok {
-		client.writeFailure(messagingBroadcastFailure, []string{"you forgot your message"})
-		return
-	}
-
-	broadcastChan <- constructBroadcastAction(client, message)
 }
 
 func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *Action) {

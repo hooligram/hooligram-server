@@ -9,21 +9,6 @@ import (
 	"github.com/hooligram/logger"
 )
 
-func constructBroadcastAction(source *Client, message string) *Action {
-	sender := make(map[string]string)
-	sender["country_code"] = source.CountryCode
-	sender["phone_number"] = source.PhoneNumber
-
-	payload := make(map[string]interface{})
-	payload["message"] = message
-	payload["sender"] = sender
-
-	return &Action{
-		Payload: payload,
-		Type:    messagingBroadcastSuccess,
-	}
-}
-
 func constructDeliverMessageAction(message *Message) *Action {
 	payload := make(map[string]interface{})
 	payload["content"] = message.Content
