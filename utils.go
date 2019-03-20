@@ -9,19 +9,6 @@ import (
 	"github.com/hooligram/logger"
 )
 
-func constructDeliverMessageAction(message *Message) *Action {
-	payload := make(map[string]interface{})
-	payload["content"] = message.Content
-	payload["date_created"] = message.DateCreated
-	payload["id"] = message.ID
-	payload["sender_id"] = message.SenderID
-
-	return &Action{
-		Payload: payload,
-		Type:    messagingDeliverRequest,
-	}
-}
-
 func constructCreateGroupSuccessAction(
 	groupID int64,
 	groupName string,
@@ -39,6 +26,19 @@ func constructCreateGroupSuccessAction(
 	return &Action{
 		Payload: payload,
 		Type:    groupCreateSuccess,
+	}
+}
+
+func constructDeliverMessageAction(message *Message) *Action {
+	payload := make(map[string]interface{})
+	payload["content"] = message.Content
+	payload["date_created"] = message.DateCreated
+	payload["id"] = message.ID
+	payload["sender_id"] = message.SenderID
+
+	return &Action{
+		Payload: payload,
+		Type:    messagingDeliverRequest,
 	}
 }
 
