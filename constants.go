@@ -5,6 +5,10 @@ const (
 	authorizationSignInRequest = "AUTHORIZATION_SIGN_IN_REQUEST"
 	authorizationSignInSuccess = "AUTHORIZATION_SIGN_IN_SUCCESS"
 
+	groupAddMemberFailure = "GROUP_ADD_MEMBER_FAILURE"
+	groupAddMemberRequest = "GROUP_ADD_MEMBER_REQUEST"
+	groupAddMemberSuccess = "GROUP_ADD_MEMBER_SUCCESS"
+
 	groupCreateFailure = "GROUP_CREATE_FAILURE"
 	groupCreateRequest = "GROUP_CREATE_REQUEST"
 	groupCreateSuccess = "GROUP_CREATE_SUCCESS"

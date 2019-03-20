@@ -71,6 +71,8 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		switch action.Type {
 		case authorizationSignInRequest:
 			result = handleAuthorizationSignInRequest(conn, &action)
+		case groupAddMemberRequest:
+			result = handleGroupAddMemberRequest(conn, &action)
 		case groupCreateRequest:
 			handleGroupCreateRequest(conn, &action)
 		case messagingSendRequest:
@@ -84,9 +86,11 @@ func v2(w http.ResponseWriter, r *http.Request) {
 		default:
 		}
 
-		if result != nil {
-			logClose(client, &action)
+		if result == nil {
+			continue
 		}
+
+		logClose(client, result)
 	}
 }
 
@@ -122,6 +126,53 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *Action) *Act
 	}
 
 	return action
+}
+
+func handleGroupAddMemberRequest(conn *websocket.Conn, action *Action) *Action {
+	client, err := getSignedInClient(conn)
+	if err != nil {
+		logBody(v2Tag, "error retrieving client. "+err.Error())
+		return nil
+	}
+
+	if !client.IsSignedIn {
+		logBody(v2Tag, "client not signed in")
+		failure := createGroupAddMemberFailureAction([]string{"not signed in"})
+		client.writeJSON(failure)
+		return failure
+	}
+
+	groupID, ok := action.Payload["group_id"].(float64)
+	if !ok {
+		failure := createGroupAddMemberFailureAction([]string{"group_id is missing"})
+		client.writeJSON(failure)
+		return failure
+	}
+
+	memberID, ok := action.Payload["member_id"].(float64)
+	if !ok {
+		failure := createGroupAddMemberFailureAction([]string{"member_id is missing"})
+		client.writeJSON(failure)
+		return failure
+	}
+
+	if !isClientInMessageGroup(client.ID, int(groupID)) {
+		failure := createGroupAddMemberFailureAction([]string{"not allowed"})
+		client.writeJSON(failure)
+		return failure
+	}
+
+	err = createMessageGroupMembers(int(groupID), []int{int(memberID)})
+	if err != nil {
+		logBody(v2Tag, "error adding new message group member. "+err.Error())
+		failure := createGroupAddMemberFailureAction([]string{"server error"})
+		client.writeJSON(failure)
+		return failure
+	}
+
+	success := createGroupAddMemberSuccessAction()
+	client.writeJSON(success)
+	return success
 }
 
 func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
