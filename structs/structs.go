@@ -1,4 +1,4 @@
-package main
+package structs
 
 import (
 	"github.com/gorilla/websocket"
@@ -18,9 +18,9 @@ type Client struct {
 	VerificationCode string
 	DateCreated      string
 
+	Conn       *websocket.Conn
 	IsSignedIn bool
 	SessionID  string
-	conn       *websocket.Conn
 }
 
 // Message .

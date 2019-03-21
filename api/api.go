@@ -1,14 +1,17 @@
-package main
+package api
 
 import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+
+	"github.com/hooligram/hooligram-server/globals"
+	"github.com/hooligram/hooligram-server/utils"
 )
 
 const apiTag = "api"
 
-func getTwilioVerificationCheck(countryCode, phoneNumber, verificationCode string) (*http.Response, error) {
+func GetTwilioVerificationCheck(countryCode, phoneNumber, verificationCode string) (*http.Response, error) {
 	url := "https://api.authy.com/protected/json/phones/verification/check"
 	url += "?country_code=" + countryCode
 	url += "&phone_number=" + phoneNumber
@@ -20,8 +23,8 @@ func getTwilioVerificationCheck(countryCode, phoneNumber, verificationCode strin
 		return nil, err
 	}
 
-	req.Header.Add("X-Authy-API-Key", twilioAPIKey)
-	resp, err := httpClient.Do(req)
+	req.Header.Add("X-Authy-API-Key", globals.TwilioAPIKey)
+	resp, err := globals.HttpClient.Do(req)
 
 	if err != nil {
 		return nil, err
@@ -30,7 +33,7 @@ func getTwilioVerificationCheck(countryCode, phoneNumber, verificationCode strin
 	return resp, nil
 }
 
-func postTwilioVerificationStart(countryCode, phoneNumber string) (*http.Response, error) {
+func PostTwilioVerificationStart(countryCode, phoneNumber string) (*http.Response, error) {
 	url := "https://api.authy.com/protected/json/phones/verification/start"
 	b, err := json.Marshal(map[string]interface{}{
 		"country_code": countryCode,
@@ -39,23 +42,23 @@ func postTwilioVerificationStart(countryCode, phoneNumber string) (*http.Respons
 	})
 
 	if err != nil {
-		logInfo(apiTag, "failed to construct twilio verification json")
+		utils.LogInfo(apiTag, "failed to construct twilio verification json")
 		return nil, err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewReader(b))
 
 	if err != nil {
-		logInfo(apiTag, "failed to create twilio verification request")
+		utils.LogInfo(apiTag, "failed to create twilio verification request")
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Authy-API-Key", twilioAPIKey)
-	resp, err := httpClient.Do(req)
+	req.Header.Set("X-Authy-API-Key", globals.TwilioAPIKey)
+	resp, err := globals.HttpClient.Do(req)
 
 	if err != nil {
-		logInfo(apiTag, "failed to make twilio verification api call")
+		utils.LogInfo(apiTag, "failed to make twilio verification api call")
 		return nil, err
 	}
 

@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"math/rand"
@@ -6,15 +6,18 @@ import (
 	"strconv"
 
 	"github.com/gorilla/websocket"
+	"github.com/hooligram/hooligram-server/constants"
+	"github.com/hooligram/hooligram-server/structs"
 	"github.com/hooligram/logger"
 )
 
-func constructCreateGroupSuccessAction(
+// ConstructCreateGroupSuccessAction .
+func ConstructCreateGroupSuccessAction(
 	groupID int64,
 	groupName string,
 	memberIDs []int,
 	dateCreated string,
-) *Action {
+) *structs.Action {
 	payload := make(map[string]interface{})
 	memberIDs = append([]int(nil), memberIDs...)
 
@@ -23,26 +26,28 @@ func constructCreateGroupSuccessAction(
 	payload["member_ids"] = memberIDs
 	payload["name"] = groupName
 
-	return &Action{
+	return &structs.Action{
 		Payload: payload,
-		Type:    groupCreateSuccess,
+		Type:    constants.GroupCreateSuccess,
 	}
 }
 
-func constructDeliverMessageAction(message *Message) *Action {
+// ConstructDeliverMessageAction .
+func ConstructDeliverMessageAction(message *structs.Message) *structs.Action {
 	payload := make(map[string]interface{})
 	payload["content"] = message.Content
 	payload["date_created"] = message.DateCreated
 	payload["id"] = message.ID
 	payload["sender_id"] = message.SenderID
 
-	return &Action{
+	return &structs.Action{
 		Payload: payload,
-		Type:    messagingDeliverRequest,
+		Type:    constants.MessagingDeliverRequest,
 	}
 }
 
-func containsID(ids []int, id int) bool {
+// ContainsID .
+func ContainsID(ids []int, id int) bool {
 	for _, i := range ids {
 		if i == id {
 			return true
@@ -52,7 +57,8 @@ func containsID(ids []int, id int) bool {
 	return false
 }
 
-func generateSessionID() string {
+// GenerateSessionID .
+func GenerateSessionID() string {
 	var runes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 	sessionID := make([]rune, 8)
 
@@ -63,41 +69,47 @@ func generateSessionID() string {
 	return string(sessionID)
 }
 
-func getDigits(s string) string {
+// GetDigits .
+func GetDigits(s string) string {
 	re := regexp.MustCompile("[^0-9]")
 	return re.ReplaceAllString(s, "")
 }
 
-func logBody(filePath string, text string) {
+// LogBody .
+func LogBody(filePath string, text string) {
 	logger.Body(
 		[]string{filePath},
 		text,
 	)
 }
 
-func logClose(client *Client, action *Action) {
+// LogClose .
+func LogClose(client *structs.Client, action *structs.Action) {
 	logger.Close(
 		[]string{client.SessionID, strconv.Itoa(client.ID), action.Type},
 		action.Payload,
 	)
 }
 
-func logInfo(filePath string, text string) {
+// LogInfo .
+func LogInfo(filePath string, text string) {
 	logger.Info(
 		[]string{filePath},
 		text,
 	)
 }
 
-func logOpen(client *Client, action *Action) {
+// LogOpen .
+func LogOpen(client *structs.Client, action *structs.Action) {
 	logger.Open(
 		[]string{client.SessionID, strconv.Itoa(client.ID), action.Type},
 		action.Payload,
 	)
 }
 
-func writeFailure(conn *websocket.Conn, actionType string, errors []string) {
-	conn.WriteJSON(Action{
+// WriteFailure .
+func WriteFailure(conn *websocket.Conn, actionType string, errors []string) {
+	conn.WriteJSON(structs.Action{
 		map[string]interface{}{
 			"errors": errors,
 		},
@@ -105,8 +117,9 @@ func writeFailure(conn *websocket.Conn, actionType string, errors []string) {
 	})
 }
 
-func writeEmptyAction(conn *websocket.Conn, actionType string) {
-	conn.WriteJSON(Action{
+// WriteEmptyAction .
+func WriteEmptyAction(conn *websocket.Conn, actionType string) {
+	conn.WriteJSON(structs.Action{
 		map[string]interface{}{},
 		actionType,
 	})
