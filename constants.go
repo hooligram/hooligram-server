@@ -13,6 +13,10 @@ const (
 	groupCreateRequest = "GROUP_CREATE_REQUEST"
 	groupCreateSuccess = "GROUP_CREATE_SUCCESS"
 
+	groupLeaveFailure = "GROUP_LEAVE_FAILURE"
+	groupLeaveRequest = "GROUP_LEAVE_REQUEST"
+	groupLeaveSuccess = "GROUP_LEAVE_SUCCESS"
+
 	messagingDeliverFailure = "MESSAGING_DELIVER_FAILURE"
 	messagingDeliverRequest = "MESSAGING_DELIVER_REQUEST"
 	messagingDeliverSuccess = "MESSAGING_DELIVER_SUCCESS"

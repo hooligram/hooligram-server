@@ -258,6 +258,35 @@ func createReceipt(messageID, recipientID int) error {
 	return err
 }
 
+func deleteMessageGroupMembers(groupID int, memberIDs []int) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	delete, err := tx.Prepare(`
+		DELETE FROM message_group_member WHERE message_group_id = ? AND member_id = ?;
+	`)
+	if err != nil {
+		return err
+	}
+
+	for _, memberID := range memberIDs {
+		_, err := delete.Exec(groupID, memberID)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
+}
+
 func getOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
 	if countryCode != getDigits(countryCode) {
 		return nil, errors.New("country code should only contain digits")

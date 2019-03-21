@@ -75,6 +75,8 @@ func v2(w http.ResponseWriter, r *http.Request) {
 			result = handleGroupAddMemberRequest(conn, &action)
 		case groupCreateRequest:
 			handleGroupCreateRequest(conn, &action)
+		case groupLeaveRequest:
+			result = handleGroupLeaveRequest(conn, &action)
 		case messagingSendRequest:
 			handleMessagingSendRequest(conn, &action)
 		case messagingDeliverSuccess:
@@ -240,6 +242,46 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *Action) {
 	)
 
 	client.writeJSON(successAction)
+}
+
+func handleGroupLeaveRequest(conn *websocket.Conn, action *Action) *Action {
+	client, err := getSignedInClient(conn)
+	if err != nil {
+		logBody(v2Tag, "error retrieving client. "+err.Error())
+		return nil
+	}
+
+	if !client.IsSignedIn {
+		logBody(v2Tag, "client not signed in")
+		failure := createGroupLeaveFailureAction([]string{"not signed in"})
+		client.writeJSON(failure)
+		return failure
+	}
+
+	groupID, ok := action.Payload["group_id"].(float64)
+	if !ok {
+		failure := createGroupLeaveFailureAction([]string{"group_id is missing"})
+		client.writeJSON(failure)
+		return failure
+	}
+
+	if !isClientInMessageGroup(client.ID, int(groupID)) {
+		failure := createGroupLeaveFailureAction([]string{"not in group"})
+		client.writeJSON(failure)
+		return failure
+	}
+
+	err = deleteMessageGroupMembers(int(groupID), []int{client.ID})
+	if err != nil {
+		logBody(v2Tag, "error removing client from message group. "+err.Error())
+		failure := createGroupLeaveFailureAction([]string{"server error"})
+		client.writeJSON(failure)
+		return failure
+	}
+
+	success := createGroupLeaveSuccessAction()
+	client.writeJSON(success)
+	return success
 }
 
 func handleMessagingSendRequest(conn *websocket.Conn, action *Action) {
