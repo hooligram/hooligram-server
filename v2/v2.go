@@ -355,28 +355,31 @@ func handleMessagingDeliverSuccess(client *structs.Client, action *structs.Actio
 }
 
 func handleVerificationRequestCodeRequest(client *structs.Client, action *structs.Action) {
-	errors := []string{}
-
 	countryCode, ok := action.Payload["country_code"].(string)
 	if !ok {
-		errors = append(errors, "country_code not in payload")
+		client.WriteFailure(
+			constants.VerificationRequestCodeFailure,
+			[]string{"country_code not in payload"},
+		)
+		return
 	}
 
 	phoneNumber, ok := action.Payload["phone_number"].(string)
 	if !ok {
-		errors = append(errors, "phone_number not in payload")
-	}
-
-	if len(errors) > 0 {
-		client.WriteFailure(constants.VerificationRequestCodeFailure, errors)
+		client.WriteFailure(
+			constants.VerificationRequestCodeFailure,
+			[]string{"phone_number not in payload"},
+		)
 		return
 	}
 
 	resp, err := api.PostTwilioVerificationStart(countryCode, phoneNumber)
 	if err != nil {
 		utils.LogBody(v2Tag, "twilio verification start error. "+err.Error())
-		errors = append(errors, "server error")
-		client.WriteFailure(constants.VerificationRequestCodeFailure, errors)
+		client.WriteFailure(
+			constants.VerificationRequestCodeFailure,
+			[]string{"server error"},
+		)
 		return
 	}
 
@@ -384,8 +387,10 @@ func handleVerificationRequestCodeRequest(client *structs.Client, action *struct
 	resp.Body.Close()
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading response body. "+err.Error())
-		errors = append(errors, "server error")
-		client.WriteFailure(constants.VerificationRequestCodeFailure, errors)
+		client.WriteFailure(
+			constants.VerificationRequestCodeFailure,
+			[]string{"server error"},
+		)
 		return
 	}
 
@@ -393,15 +398,19 @@ func handleVerificationRequestCodeRequest(client *structs.Client, action *struct
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		utils.LogBody(v2Tag, "error parsing json. "+err.Error())
-		errors = append(errors, "server error")
-		client.WriteFailure(constants.VerificationRequestCodeFailure, errors)
+		client.WriteFailure(
+			constants.VerificationRequestCodeFailure,
+			[]string{"server error"},
+		)
 		return
 	}
 
 	if !r["success"].(bool) {
 		utils.LogBody(v2Tag, "twilio responded with failure. "+err.Error())
-		errors = append(errors, "server error")
-		client.WriteFailure(constants.VerificationRequestCodeFailure, errors)
+		client.WriteFailure(
+			constants.VerificationRequestCodeFailure,
+			[]string{"server error"},
+		)
 		return
 	}
 
