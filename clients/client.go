@@ -8,16 +8,35 @@ import (
 
 // Client .
 type Client struct {
-	db.Client
+	Conn      *websocket.Conn
+	SessionID string
 
-	Conn       *websocket.Conn
-	IsSignedIn bool
-	SessionID  string
+	id         int
+	isSignedIn bool
+}
+
+// GetID .
+func (client *Client) GetID() int {
+	return client.id
+}
+
+// GetVerificationCode .
+func (client *Client) GetVerificationCode() (string, error) {
+	if client.id < 1 {
+		return "", nil
+	}
+
+	clientRow, err := db.ReadClientByID(client.id)
+	if err != nil {
+		return "", err
+	}
+
+	return clientRow.VerificationCode, nil
 }
 
 // IsVerified .
 func (client *Client) IsVerified() (bool, error) {
-	verificationCode, err := db.ReadVerificationCode(client.ID)
+	verificationCode, err := db.ReadClientVerificationCode(client.id)
 	if err != nil {
 		return false, err
 	}
@@ -25,40 +44,76 @@ func (client *Client) IsVerified() (bool, error) {
 	return verificationCode != "", nil
 }
 
+// IsSignedIn .
+func (client *Client) IsSignedIn() bool {
+	return client.isSignedIn
+}
+
+// Register .
+func (client *Client) Register(countryCode, phoneNumber string) (bool, error) {
+	clientRow, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
+	if err != nil {
+		return false, err
+	}
+
+	if clientRow == nil {
+		clientRow, err = db.CreateClient(countryCode, phoneNumber)
+		if err != nil {
+			return false, err
+		}
+	} else {
+		err := db.UpdateClientVerificationCode(clientRow.ID, "")
+		if err != nil {
+			return false, err
+		}
+	}
+
+	client.id = clientRow.ID
+	return true, nil
+}
+
 // SignIn .
 func (client *Client) SignIn(
 	countryCode string,
 	phoneNumber string,
 	verificationCode string,
-) {
-	client.CountryCode = countryCode
-	client.PhoneNumber = phoneNumber
-	client.VerificationCode = verificationCode
+) (bool, error) {
+	row, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
+	if err != nil {
+		return false, err
+	}
 
-	client.IsSignedIn = true
+	if row == nil {
+		return false, nil
+	}
+
+	if row.VerificationCode != verificationCode {
+		return false, nil
+	}
+
+	client.id = row.ID
+	return true, nil
 }
 
 // WriteEmptyAction .
 func (client *Client) WriteEmptyAction(actionType string) {
-	// utils.writeEmptyAction(client.conn, actionType)
-	client.Conn.WriteJSON(actions.Action{
-		map[string]interface{}{},
-		actionType,
+	client.WriteJSON(&actions.Action{
+		Payload: map[string]interface{}{},
+		Type:    actionType,
 	})
 }
 
 // WriteFailure .
 func (client *Client) WriteFailure(actionType string, errors []string) {
-	// utils.writeFailure(client.conn, actionType, errors)
-	client.Conn.WriteJSON(actions.Action{
-		map[string]interface{}{
+	client.WriteJSON(&actions.Action{
+		Payload: map[string]interface{}{
 			"errors": errors,
 		},
-		actionType,
+		Type: actionType,
 	})
 }
 
 // WriteJSON .
-func (client *Client) WriteJSON(action *actions.Action) {
-	client.Conn.WriteJSON(*action)
+func (client *Client) WriteJSON(action *actions.Action) error {
+	return client.Conn.WriteJSON(*action)
 }

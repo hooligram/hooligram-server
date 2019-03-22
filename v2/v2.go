@@ -3,12 +3,10 @@ package v2
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
 	"github.com/hooligram/hooligram-server/actions"
-	"github.com/hooligram/hooligram-server/api"
 	"github.com/hooligram/hooligram-server/clients"
 	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
@@ -41,7 +39,7 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			utils.LogInfo(
 				v2Tag,
-				fmt.Sprintf("connection error. client id %v. %v", client.ID, err.Error()),
+				fmt.Sprintf("connection error. client id %v. %v", client.GetID(), err.Error()),
 			)
 			return
 		}
@@ -52,7 +50,7 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			utils.LogInfo(
 				v2Tag,
-				fmt.Sprintf("error reading json. client id %v. %v", client.ID, err.Error()),
+				fmt.Sprintf("error reading json. client id %v. %v", client.GetID(), err.Error()),
 			)
 			continue
 		}
@@ -60,7 +58,7 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		if action.Type == "" {
 			utils.LogInfo(
 				v2Tag,
-				fmt.Sprintf("action type missing. client id %v. %v", client.ID, err.Error()),
+				fmt.Sprintf("action type missing. client id %v. %v", client.GetID(), err.Error()),
 			)
 			continue
 		}
@@ -68,12 +66,12 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		if action.Payload == nil {
 			utils.LogInfo(
 				v2Tag,
-				fmt.Sprintf("action payload missing. client id %v. %v", client.ID, err.Error()),
+				fmt.Sprintf("action payload missing. client id %v. %v", client.GetID(), err.Error()),
 			)
 			continue
 		}
 
-		utils.LogOpen(client.SessionID, strconv.Itoa(client.ID), action.Type, action.Payload)
+		utils.LogOpen(client.SessionID, strconv.Itoa(client.GetID()), action.Type, action.Payload)
 		var result *actions.Action
 
 		switch action.Type {
@@ -100,7 +98,7 @@ func V2(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		utils.LogClose(client.SessionID, strconv.Itoa(client.ID), result.Type, result.Payload)
+		utils.LogClose(client.SessionID, strconv.Itoa(client.GetID()), result.Type, result.Payload)
 	}
 }
 
@@ -123,7 +121,7 @@ func handleAuthorizationSignInRequest(client *clients.Client, action *actions.Ac
 	action.Type = constants.AuthorizationSignInSuccess
 	client.WriteJSON(action)
 
-	undeliveredMessages, err := db.FindUndeliveredMessages(client.ID)
+	undeliveredMessages, err := db.FindUndeliveredMessages(client.GetID())
 	if err != nil {
 		utils.LogBody(v2Tag, "error finding messages to deliver. "+err.Error())
 	}
@@ -137,7 +135,7 @@ func handleAuthorizationSignInRequest(client *clients.Client, action *actions.Ac
 }
 
 func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action) *actions.Action {
-	if !client.IsSignedIn {
+	if !client.IsSignedIn() {
 		utils.LogBody(v2Tag, "client not signed in")
 		failure := actions.CreateGroupAddMemberFailureAction([]string{"not signed in"})
 		client.WriteJSON(failure)
@@ -158,7 +156,7 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 		return failure
 	}
 
-	if !db.IsClientInMessageGroup(client.ID, int(groupID)) {
+	if !db.IsClientInMessageGroup(client.GetID(), int(groupID)) {
 		failure := actions.CreateGroupAddMemberFailureAction([]string{"not allowed"})
 		client.WriteJSON(failure)
 		return failure
@@ -203,7 +201,7 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) {
 		)
 	}
 
-	if !utils.ContainsID(memberIDs, client.ID) {
+	if !utils.ContainsID(memberIDs, client.GetID()) {
 		errors = append(
 			errors,
 			"you need to include at the group creator in `member_ids` in payload",
@@ -238,7 +236,7 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) {
 }
 
 func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *actions.Action {
-	if !client.IsSignedIn {
+	if !client.IsSignedIn() {
 		utils.LogBody(v2Tag, "client not signed in")
 		failure := actions.CreateGroupLeaveFailureAction([]string{"not signed in"})
 		client.WriteJSON(failure)
@@ -252,13 +250,13 @@ func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *ac
 		return failure
 	}
 
-	if !db.IsClientInMessageGroup(client.ID, int(groupID)) {
+	if !db.IsClientInMessageGroup(client.GetID(), int(groupID)) {
 		failure := actions.CreateGroupLeaveFailureAction(([]string{"not in group"}))
 		client.WriteJSON(failure)
 		return failure
 	}
 
-	err := db.DeleteMessageGroupMembers(int(groupID), []int{client.ID})
+	err := db.DeleteMessageGroupMembers(int(groupID), []int{client.GetID()})
 	if err != nil {
 		utils.LogBody(v2Tag, "error removing client from message group. "+err.Error())
 		failure := actions.CreateGroupLeaveFailureAction(([]string{"server error"}))
@@ -290,7 +288,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return
 	}
 
-	if client.ID != int(senderID) {
+	if client.GetID() != int(senderID) {
 		client.WriteFailure(constants.MessagingSendFailure, []string{"sender_id mismatch"})
 		return
 	}
@@ -346,149 +344,10 @@ func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Actio
 		return
 	}
 
-	recipientID := client.ID
+	recipientID := client.GetID()
 	err := db.UpdateReceiptDateDelivered(int(messageID), recipientID)
 	if err != nil {
 		client.WriteFailure(constants.MessagingDeliverFailure, []string{err.Error()})
 		return
 	}
-}
-
-func handleVerificationRequestCodeRequest(client *clients.Client, action *actions.Action) {
-	countryCode, ok := action.Payload["country_code"].(string)
-	if !ok {
-		client.WriteFailure(
-			constants.VerificationRequestCodeFailure,
-			[]string{"country_code not in payload"},
-		)
-		return
-	}
-
-	phoneNumber, ok := action.Payload["phone_number"].(string)
-	if !ok {
-		client.WriteFailure(
-			constants.VerificationRequestCodeFailure,
-			[]string{"phone_number not in payload"},
-		)
-		return
-	}
-
-	resp, err := api.PostTwilioVerificationStart(countryCode, phoneNumber)
-	if err != nil {
-		utils.LogBody(v2Tag, "twilio verification start error. "+err.Error())
-		client.WriteFailure(
-			constants.VerificationRequestCodeFailure,
-			[]string{"server error"},
-		)
-		return
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
-	if err != nil {
-		utils.LogBody(v2Tag, "error reading response body. "+err.Error())
-		client.WriteFailure(
-			constants.VerificationRequestCodeFailure,
-			[]string{"server error"},
-		)
-		return
-	}
-
-	r := map[string]interface{}{}
-	err = json.Unmarshal(body, &r)
-	if err != nil {
-		utils.LogBody(v2Tag, "error parsing json. "+err.Error())
-		client.WriteFailure(
-			constants.VerificationRequestCodeFailure,
-			[]string{"server error"},
-		)
-		return
-	}
-
-	if !r["success"].(bool) {
-		utils.LogBody(v2Tag, "twilio responded with failure. "+err.Error())
-		client.WriteFailure(
-			constants.VerificationRequestCodeFailure,
-			[]string{"server error"},
-		)
-		return
-	}
-
-	client.WriteEmptyAction(constants.VerificationRequestCodeSuccess)
-}
-
-func handleVerificationSubmitCodeRequest(client *clients.Client, action *actions.Action) {
-	code, ok := action.Payload["code"].(string)
-	if !ok {
-		client.WriteFailure(
-			constants.VerificationSubmitCodeFailure,
-			[]string{"code"},
-		)
-		return
-	}
-
-	isVerified, err := client.IsVerified()
-	if err != nil {
-		utils.LogBody(v2Tag, "error checking if client is verified. "+err.Error())
-		client.WriteFailure(
-			constants.VerificationSubmitCodeFailure,
-			[]string{"server error"},
-		)
-		return
-	}
-
-	if !isVerified {
-		resp, err := api.GetTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, code)
-		if err != nil {
-			utils.LogBody(v2Tag, "twilio verification check error. "+err.Error())
-			client.WriteFailure(
-				constants.VerificationSubmitCodeFailure,
-				[]string{"server error"},
-			)
-			return
-		}
-
-		body, err := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			utils.LogBody(v2Tag, "error reading response body. "+err.Error())
-			client.WriteFailure(
-				constants.VerificationSubmitCodeFailure,
-				[]string{"server error"},
-			)
-			return
-		}
-
-		r := map[string]interface{}{}
-		err = json.Unmarshal(body, &r)
-		if err != nil {
-			utils.LogBody(v2Tag, "error parsing json. "+err.Error())
-			client.WriteFailure(
-				constants.VerificationSubmitCodeFailure,
-				[]string{"server error"},
-			)
-			return
-		}
-
-		if !r["success"].(bool) {
-			// unverifyClient(client, conn)
-			client.WriteFailure(
-				constants.VerificationSubmitCodeFailure,
-				[]string{"incorrect verification code"},
-			)
-			return
-		}
-	} else {
-		if client.VerificationCode != code {
-			// unverifyClient(client, conn)
-			client.WriteFailure(
-				constants.VerificationSubmitCodeFailure,
-				[]string{"incorrect verification code"},
-			)
-			return
-		}
-	}
-
-	// verifyClient(client, conn, code)
-	client.WriteEmptyAction(constants.VerificationSubmitCodeSuccess)
 }

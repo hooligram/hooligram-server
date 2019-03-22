@@ -294,40 +294,6 @@ func DeleteMessageGroupMembers(groupID int, memberIDs []int) error {
 	return nil
 }
 
-// GetOrCreateClient .
-func GetOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
-	if countryCode != getDigits(countryCode) {
-		return nil, errors.New("country code should only contain digits")
-	}
-
-	if phoneNumber != getDigits(phoneNumber) {
-		return nil, errors.New("phone number should only contain digits")
-	}
-
-	client, err := FindClient(countryCode, phoneNumber)
-	if err != nil {
-		return nil, err
-	}
-
-	if client != nil {
-		return client, nil
-	}
-
-	_, err = instance.Exec(`
-		INSERT INTO client ( country_code, phone_number ) VALUES ( ?, ? );
-	`, countryCode, phoneNumber)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err = FindClient(countryCode, phoneNumber)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
 // FindAllMessageGroupMemberIDs .
 func FindAllMessageGroupMemberIDs(messageGroupID int) ([]int, error) {
 	rows, err := instance.Query(`
@@ -348,76 +314,6 @@ func FindAllMessageGroupMemberIDs(messageGroupID int) ([]int, error) {
 	}
 
 	return memberIDs, nil
-}
-
-// FindAllVerifiedClients .
-func FindAllVerifiedClients() ([]*Client, error) {
-	rows, err := instance.Query(`
-		SELECT *
-		FROM client
-		WHERE verification_code IS NOT NULL;
-	`)
-	clients := []*Client{}
-
-	if err != nil {
-		// utils.LogInfo(dbTag, "failed to find verified clients. "+err.Error())
-		return clients, err
-	}
-
-	for rows.Next() {
-		var id int
-		var countryCode string
-		var phoneNumber string
-		var verificationCode string
-		var dateCreated string
-		rows.Scan(&id, &countryCode, &phoneNumber, &verificationCode, &dateCreated)
-		client := Client{
-			ID:               id,
-			CountryCode:      countryCode,
-			PhoneNumber:      phoneNumber,
-			VerificationCode: verificationCode,
-			DateCreated:      dateCreated,
-		}
-		clients = append(clients, &client)
-	}
-
-	return clients, nil
-}
-
-// FindClient .
-func FindClient(countryCode, phoneNumber string) (*Client, error) {
-	rows, err := instance.Query(`
-		SELECT *
-		FROM client
-		WHERE
-			country_code = ?
-			AND
-			phone_number = ?
-	`, countryCode, phoneNumber)
-
-	if err != nil {
-		// utils.LogInfo(dbTag, "failed to find client. "+err.Error())
-		return nil, err
-	}
-
-	if !rows.Next() {
-		return nil, nil
-	}
-
-	var id int
-	var verificationCode string
-	var dateCreated string
-	rows.Scan(&id, nil, nil, &verificationCode, &dateCreated)
-
-	client := &Client{
-		ID:               id,
-		CountryCode:      countryCode,
-		PhoneNumber:      phoneNumber,
-		VerificationCode: verificationCode,
-		DateCreated:      dateCreated,
-	}
-
-	return client, nil
 }
 
 // FindUndeliveredMessages .
@@ -452,38 +348,6 @@ func FindUndeliveredMessages(recipientID int) ([]*Message, error) {
 	return messages, nil
 }
 
-// FindVerifiedClient .
-func FindVerifiedClient(countryCode, phoneNumber, verificationCode string) (*Client, bool) {
-	rows, err := instance.Query(`
-		SELECT *
-		FROM client
-		WHERE
-			country_code = ? AND phone_number = ? AND verification_code = ?;
-	`, countryCode, phoneNumber, verificationCode)
-
-	if err != nil {
-		// utils.LogInfo(dbTag, "failed to find client. "+err.Error())
-		return nil, false
-	}
-
-	if !rows.Next() {
-		return nil, false
-	}
-
-	var id int
-	var dateCreated string
-	rows.Scan(&id, nil, nil, nil, &dateCreated)
-	client := Client{
-		ID:               id,
-		CountryCode:      countryCode,
-		PhoneNumber:      phoneNumber,
-		VerificationCode: verificationCode,
-		DateCreated:      dateCreated,
-	}
-
-	return &client, true
-}
-
 // IsClientInMessageGroup .
 func IsClientInMessageGroup(clientID, messageGroupID int) bool {
 	rows, err := instance.Query(`
@@ -496,19 +360,6 @@ func IsClientInMessageGroup(clientID, messageGroupID int) bool {
 	}
 
 	return rows.Next()
-}
-
-// UpdateClientVerificationCode .
-func UpdateClientVerificationCode(client *Client, verificationCode string) error {
-	_, err := instance.Exec(`
-		UPDATE client SET verification_code = ? WHERE country_code = ? AND phone_number = ?;
-	`, verificationCode, client.CountryCode, client.PhoneNumber)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // UpdateReceiptDateDelivered .

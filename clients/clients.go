@@ -6,6 +6,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const clientsTag = "clients"
+
 var clients = make(map[*websocket.Conn]*Client)
 
 // Add .
