@@ -144,12 +144,147 @@ func createMessage(content string, messageGroupID, senderID int) (*Message, erro
 	}, nil
 }
 
+func createMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error) {
+	tx, err := db.Begin()
+	if err != nil {
+		logInfo(dbTag, "transaction error. "+err.Error())
+		return nil, err
+	}
+
+	result, err := tx.Exec(
+		`INSERT INTO message_group ( name ) VALUES ( ? );`,
+		groupName,
+	)
+	if err != nil {
+		tx.Rollback()
+		logInfo(dbTag, "error creating message group. "+err.Error())
+		return nil, err
+	}
+
+	groupID, err := result.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		logInfo(dbTag, "error creating message group. "+err.Error())
+		return nil, err
+	}
+
+	for _, memberID := range memberIDs {
+		result, err = tx.Exec(
+			`INSERT INTO message_group_member ( message_group_id, member_id )
+			VALUES ( ?, ? );`,
+			groupID,
+			memberID,
+		)
+		if err != nil {
+			tx.Rollback()
+			logInfo(
+				dbTag,
+				fmt.Sprintf("failed to create message group %v in db. %v", groupName, err.Error()),
+			)
+			return nil, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		logInfo(dbTag, "error committing transaction. "+err.Error())
+		return nil, err
+	}
+
+	rows, err := db.Query(
+		`SELECT date_created FROM message_group WHERE id = ?;`,
+		groupID,
+	)
+	if err != nil {
+		logInfo(dbTag, "error retrieving message group. "+err.Error())
+		return nil, err
+	}
+
+	if !rows.Next() {
+		errorMsg := "message_group `%v` has been added to the database but "
+		errorMsg += "an error occured when querying it"
+		logInfo(dbTag, fmt.Sprintf(errorMsg, groupName))
+		return nil, errors.New(errorMsg)
+	}
+
+	var dateCreated string
+	rows.Scan(&dateCreated)
+
+	messageGroup := &MessageGroup{
+		ID:          groupID,
+		Name:        groupName,
+		DateCreated: dateCreated,
+
+		MemberIDs: memberIDs,
+	}
+
+	return messageGroup, nil
+}
+
+func createMessageGroupMembers(messageGroupID int, memberIDs []int) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	insert, err := tx.Prepare(`
+		INSERT INTO message_group_member ( message_group_id, member_id )
+		VALUES ( ?, ? );
+	`)
+	if err != nil {
+		return err
+	}
+
+	for _, memberID := range memberIDs {
+		_, err := insert.Exec(messageGroupID, memberID)
+		if err != nil {
+			return tx.Rollback()
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func createReceipt(messageID, recipientID int) error {
 	_, err := db.Query(`
 		INSERT INTO receipt ( message_id, recipient_id ) VALUES ( ?, ? );
 	`, messageID, recipientID)
 
 	return err
+}
+
+func deleteMessageGroupMembers(groupID int, memberIDs []int) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	delete, err := tx.Prepare(`
+		DELETE FROM message_group_member WHERE message_group_id = ? AND member_id = ?;
+	`)
+	if err != nil {
+		return err
+	}
+
+	for _, memberID := range memberIDs {
+		_, err := delete.Exec(groupID, memberID)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
 }
 
 func getOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
@@ -367,81 +502,4 @@ func updateReceiptDateDelivered(messageID, recipientID int) error {
 		WHERE message_id = ? AND recipient_id = ?;
 	`, messageID, recipientID)
 	return err
-}
-
-func createMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error) {
-	tx, err := db.Begin()
-	if err != nil {
-		logInfo(dbTag, "transaction error. "+err.Error())
-		return nil, err
-	}
-
-	result, err := tx.Exec(
-		`INSERT INTO message_group ( name ) VALUES ( ? );`,
-		groupName,
-	)
-	if err != nil {
-		tx.Rollback()
-		logInfo(dbTag, "error creating message group. "+err.Error())
-		return nil, err
-	}
-
-	groupID, err := result.LastInsertId()
-	if err != nil {
-		tx.Rollback()
-		logInfo(dbTag, "error creating message group. "+err.Error())
-		return nil, err
-	}
-
-	for _, memberID := range memberIDs {
-		result, err = tx.Exec(
-			`INSERT INTO message_group_member ( message_group_id, member_id )
-			VALUES ( ?, ? );`,
-			groupID,
-			memberID,
-		)
-		if err != nil {
-			tx.Rollback()
-			logInfo(
-				dbTag,
-				fmt.Sprintf("failed to create message group %v in db. %v", groupName, err.Error()),
-			)
-			return nil, err
-		}
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		logInfo(dbTag, "error committing transaction. "+err.Error())
-		return nil, err
-	}
-
-	rows, err := db.Query(
-		`SELECT date_created FROM message_group WHERE id = ?;`,
-		groupID,
-	)
-	if err != nil {
-		logInfo(dbTag, "error retrieving message group. "+err.Error())
-		return nil, err
-	}
-
-	if !rows.Next() {
-		errorMsg := "message_group `%v` has been added to the database but "
-		errorMsg += "an error occured when querying it"
-		logInfo(dbTag, fmt.Sprintf(errorMsg, groupName))
-		return nil, errors.New(errorMsg)
-	}
-
-	var dateCreated string
-	rows.Scan(&dateCreated)
-
-	messageGroup := &MessageGroup{
-		ID:          groupID,
-		Name:        groupName,
-		DateCreated: dateCreated,
-
-		MemberIDs: memberIDs,
-	}
-
-	return messageGroup, nil
 }

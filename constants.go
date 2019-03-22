@@ -5,9 +5,17 @@ const (
 	authorizationSignInRequest = "AUTHORIZATION_SIGN_IN_REQUEST"
 	authorizationSignInSuccess = "AUTHORIZATION_SIGN_IN_SUCCESS"
 
+	groupAddMemberFailure = "GROUP_ADD_MEMBER_FAILURE"
+	groupAddMemberRequest = "GROUP_ADD_MEMBER_REQUEST"
+	groupAddMemberSuccess = "GROUP_ADD_MEMBER_SUCCESS"
+
 	groupCreateFailure = "GROUP_CREATE_FAILURE"
 	groupCreateRequest = "GROUP_CREATE_REQUEST"
 	groupCreateSuccess = "GROUP_CREATE_SUCCESS"
+
+	groupLeaveFailure = "GROUP_LEAVE_FAILURE"
+	groupLeaveRequest = "GROUP_LEAVE_REQUEST"
+	groupLeaveSuccess = "GROUP_LEAVE_SUCCESS"
 
 	messagingDeliverFailure = "MESSAGING_DELIVER_FAILURE"
 	messagingDeliverRequest = "MESSAGING_DELIVER_REQUEST"
