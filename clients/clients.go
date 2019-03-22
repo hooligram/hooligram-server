@@ -1,4 +1,4 @@
-package session
+package clients
 
 import (
 	"github.com/gorilla/websocket"
@@ -36,25 +36,4 @@ func Remove(conn *websocket.Conn) error {
 
 	delete(clients, conn)
 	return nil
-}
-
-// SignIn .
-func SignIn(
-	conn *websocket.Conn,
-	countryCode string,
-	phoneNumber string,
-	verificationCode string,
-) *structs.Client {
-	client, ok := Get(conn)
-	if !ok {
-		return nil
-	}
-
-	client.CountryCode = countryCode
-	client.PhoneNumber = phoneNumber
-	client.VerificationCode = verificationCode
-
-	client.IsSignedIn = true
-
-	return client
 }

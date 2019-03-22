@@ -6,32 +6,32 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/gorilla/websocket"
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/api"
+	"github.com/hooligram/hooligram-server/clients"
 	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
 	"github.com/hooligram/hooligram-server/globals"
-	"github.com/hooligram/hooligram-server/session"
 	"github.com/hooligram/hooligram-server/structs"
 	"github.com/hooligram/hooligram-server/utils"
 )
 
 const v2Tag = "v2"
 
+// V2 .
 func V2(w http.ResponseWriter, r *http.Request) {
 	conn, err := globals.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		utils.LogInfo(v2Tag, "websocket upgrade failed. "+err.Error())
+		utils.LogInfo(v2Tag, "error upgrading to websocket. "+err.Error())
 		return
 	}
 
-	session.Add(conn)
-	defer session.Remove(conn)
+	clients.Add(conn)
+	defer clients.Remove(conn)
 	defer conn.Close()
 
 	for {
-		client, ok := session.Get(conn)
+		client, ok := clients.Get(conn)
 		if !ok {
 			break
 		}
@@ -78,21 +78,21 @@ func V2(w http.ResponseWriter, r *http.Request) {
 
 		switch action.Type {
 		case constants.AuthorizationSignInRequest:
-			result = handleAuthorizationSignInRequest(conn, &action)
+			result = handleAuthorizationSignInRequest(client, &action)
 		case constants.GroupAddMemberRequest:
-			result = handleGroupAddMemberRequest(conn, &action)
+			result = handleGroupAddMemberRequest(client, &action)
 		case constants.GroupCreateRequest:
-			handleGroupCreateRequest(conn, &action)
+			handleGroupCreateRequest(client, &action)
 		case constants.GroupLeaveRequest:
-			result = handleGroupLeaveRequest(conn, &action)
+			result = handleGroupLeaveRequest(client, &action)
 		case constants.MessagingSendRequest:
-			handleMessagingSendRequest(conn, &action)
+			handleMessagingSendRequest(client, &action)
 		case constants.MessagingDeliverSuccess:
-			handleMessagingDeliverSuccess(conn, &action)
+			handleMessagingDeliverSuccess(client, &action)
 		case constants.VerificationRequestCodeRequest:
-			handleVerificationRequestCodeRequest(conn, &action)
+			handleVerificationRequestCodeRequest(client, &action)
 		case constants.VerificationSubmitCodeRequest:
-			handleVerificationSubmitCodeRequest(conn, &action)
+			handleVerificationSubmitCodeRequest(client, &action)
 		default:
 		}
 
@@ -104,12 +104,12 @@ func V2(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleAuthorizationSignInRequest(conn *websocket.Conn, action *structs.Action) *structs.Action {
+func handleAuthorizationSignInRequest(client *structs.Client, action *structs.Action) *structs.Action {
 	countryCode := action.Payload["country_code"].(string)
 	phoneNumber := action.Payload["phone_number"].(string)
 	verificationCode := action.Payload["code"].(string)
 
-	client := session.SignIn(conn, countryCode, phoneNumber, verificationCode)
+	client.SignIn(countryCode, phoneNumber, verificationCode)
 	if client == nil {
 		client.WriteFailure(constants.AuthorizationSignInFailure, []string{"sign in failed"})
 		return &structs.Action{
@@ -136,13 +136,7 @@ func handleAuthorizationSignInRequest(conn *websocket.Conn, action *structs.Acti
 	return action
 }
 
-func handleGroupAddMemberRequest(conn *websocket.Conn, action *structs.Action) *structs.Action {
-	client, ok := session.Get(conn)
-	if !ok {
-		utils.LogBody(v2Tag, "error retrieving client")
-		return nil
-	}
-
+func handleGroupAddMemberRequest(client *structs.Client, action *structs.Action) *structs.Action {
 	if !client.IsSignedIn {
 		utils.LogBody(v2Tag, "client not signed in")
 		failure := actions.CreateGroupAddMemberFailureAction([]string{"not signed in"})
@@ -183,13 +177,8 @@ func handleGroupAddMemberRequest(conn *websocket.Conn, action *structs.Action) *
 	return success
 }
 
-func handleGroupCreateRequest(conn *websocket.Conn, action *structs.Action) {
+func handleGroupCreateRequest(client *structs.Client, action *structs.Action) {
 	errors := []string{}
-
-	client, ok := session.Get(conn)
-	if !ok {
-		return
-	}
 
 	groupName, groupNameOk := action.Payload["name"].(string)
 	memberIDsPayload, memberIDsOk := action.Payload["member_ids"].([]interface{})
@@ -248,13 +237,7 @@ func handleGroupCreateRequest(conn *websocket.Conn, action *structs.Action) {
 	client.WriteJSON(successAction)
 }
 
-func handleGroupLeaveRequest(conn *websocket.Conn, action *structs.Action) *structs.Action {
-	client, ok := session.Get(conn)
-	if !ok {
-		utils.LogBody(v2Tag, "error retrieving client")
-		return nil
-	}
-
+func handleGroupLeaveRequest(client *structs.Client, action *structs.Action) *structs.Action {
 	if !client.IsSignedIn {
 		utils.LogBody(v2Tag, "client not signed in")
 		failure := actions.CreateGroupLeaveFailureAction([]string{"not signed in"})
@@ -288,12 +271,7 @@ func handleGroupLeaveRequest(conn *websocket.Conn, action *structs.Action) *stru
 	return success
 }
 
-func handleMessagingSendRequest(conn *websocket.Conn, action *structs.Action) {
-	client, ok := session.Get(conn)
-	if !ok {
-		utils.LogBody(v2Tag, "error retrieving client")
-	}
-
+func handleMessagingSendRequest(client *structs.Client, action *structs.Action) {
 	content, ok := action.Payload["content"].(string)
 	if !ok {
 		client.WriteFailure(constants.MessagingSendFailure, []string{"content is missing"})
@@ -361,12 +339,7 @@ func handleMessagingSendRequest(conn *websocket.Conn, action *structs.Action) {
 	})
 }
 
-func handleMessagingDeliverSuccess(conn *websocket.Conn, action *structs.Action) {
-	client, ok := session.Get(conn)
-	if !ok {
-		utils.LogBody(v2Tag, "error retrieving client")
-	}
-
+func handleMessagingDeliverSuccess(client *structs.Client, action *structs.Action) {
 	messageID, ok := action.Payload["message_id"].(float64)
 	if !ok {
 		client.WriteFailure(constants.MessagingDeliverFailure, []string{"message_id is missing"})
@@ -381,23 +354,17 @@ func handleMessagingDeliverSuccess(conn *websocket.Conn, action *structs.Action)
 	}
 }
 
-func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *structs.Action) {
-	client, ok := session.Get(conn)
-	if !ok {
-		utils.LogBody(v2Tag, "error retrieving client")
-	}
-
+func handleVerificationRequestCodeRequest(client *structs.Client, action *structs.Action) {
 	errors := []string{}
-	countryCode, ok := action.Payload["country_code"].(string)
 
+	countryCode, ok := action.Payload["country_code"].(string)
 	if !ok {
-		errors = append(errors, "you need to include country_code in payload")
+		errors = append(errors, "country_code not in payload")
 	}
 
 	phoneNumber, ok := action.Payload["phone_number"].(string)
-
 	if !ok {
-		errors = append(errors, "you need to include phone_number in payload")
+		errors = append(errors, "phone_number not in payload")
 	}
 
 	if len(errors) > 0 {
@@ -406,33 +373,34 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *structs.
 	}
 
 	resp, err := api.PostTwilioVerificationStart(countryCode, phoneNumber)
-
 	if err != nil {
-		errors = append(errors, err.Error())
+		utils.LogBody(v2Tag, "twilio verification start error. "+err.Error())
+		errors = append(errors, "server error")
 		client.WriteFailure(constants.VerificationRequestCodeFailure, errors)
 		return
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
-
 	if err != nil {
-		errors = append(errors, err.Error())
+		utils.LogBody(v2Tag, "error reading response body. "+err.Error())
+		errors = append(errors, "server error")
 		client.WriteFailure(constants.VerificationRequestCodeFailure, errors)
 		return
 	}
 
 	r := map[string]interface{}{}
 	err = json.Unmarshal(body, &r)
-
 	if err != nil {
-		errors = append(errors, err.Error())
+		utils.LogBody(v2Tag, "error parsing json. "+err.Error())
+		errors = append(errors, "server error")
 		client.WriteFailure(constants.VerificationRequestCodeFailure, errors)
 		return
 	}
 
 	if !r["success"].(bool) {
-		errors = append(errors, "i failed to make verification start api call")
+		utils.LogBody(v2Tag, "twilio responded with failure. "+err.Error())
+		errors = append(errors, "server error")
 		client.WriteFailure(constants.VerificationRequestCodeFailure, errors)
 		return
 	}
@@ -440,12 +408,8 @@ func handleVerificationRequestCodeRequest(conn *websocket.Conn, action *structs.
 	client.WriteEmptyAction(constants.VerificationRequestCodeSuccess)
 }
 
-func handleVerificationSubmitCodeRequest(conn *websocket.Conn, action *structs.Action) {
+func handleVerificationSubmitCodeRequest(client *structs.Client, action *structs.Action) {
 	var errors []string
-	client, ok := session.Get(conn)
-	if !ok {
-		utils.LogBody(v2Tag, "error retrieving client")
-	}
 	code, ok := action.Payload["code"].(string)
 
 	if !ok {

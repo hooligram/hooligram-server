@@ -5,6 +5,19 @@ func (client *Client) IsVerified() bool {
 	return client.VerificationCode != ""
 }
 
+// SignIn .
+func (client *Client) SignIn(
+	countryCode string,
+	phoneNumber string,
+	verificationCode string,
+) {
+	client.CountryCode = countryCode
+	client.PhoneNumber = phoneNumber
+	client.VerificationCode = verificationCode
+
+	client.IsSignedIn = true
+}
+
 // WriteEmptyAction .
 func (client *Client) WriteEmptyAction(actionType string) {
 	// utils.writeEmptyAction(client.conn, actionType)
