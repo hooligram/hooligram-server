@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/api"
@@ -12,7 +13,6 @@ import (
 	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
 	"github.com/hooligram/hooligram-server/globals"
-	"github.com/hooligram/hooligram-server/structs"
 	"github.com/hooligram/hooligram-server/utils"
 )
 
@@ -46,7 +46,7 @@ func V2(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		action := structs.Action{}
+		action := actions.Action{}
 		err = json.Unmarshal(p, &action)
 
 		if err != nil {
@@ -73,8 +73,8 @@ func V2(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		utils.LogOpen(client, &action)
-		var result *structs.Action
+		utils.LogOpen(client.SessionID, strconv.Itoa(client.ID), action.Type, action.Payload)
+		var result *actions.Action
 
 		switch action.Type {
 		case constants.AuthorizationSignInRequest:
@@ -100,11 +100,11 @@ func V2(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		utils.LogClose(client, result)
+		utils.LogClose(client.SessionID, strconv.Itoa(client.ID), result.Type, result.Payload)
 	}
 }
 
-func handleAuthorizationSignInRequest(client *structs.Client, action *structs.Action) *structs.Action {
+func handleAuthorizationSignInRequest(client *clients.Client, action *actions.Action) *actions.Action {
 	countryCode := action.Payload["country_code"].(string)
 	phoneNumber := action.Payload["phone_number"].(string)
 	verificationCode := action.Payload["code"].(string)
@@ -112,7 +112,7 @@ func handleAuthorizationSignInRequest(client *structs.Client, action *structs.Ac
 	client.SignIn(countryCode, phoneNumber, verificationCode)
 	if client == nil {
 		client.WriteFailure(constants.AuthorizationSignInFailure, []string{"sign in failed"})
-		return &structs.Action{
+		return &actions.Action{
 			Payload: map[string]interface{}{
 				"errors": []string{"sign in failed"},
 			},
@@ -129,14 +129,14 @@ func handleAuthorizationSignInRequest(client *structs.Client, action *structs.Ac
 	}
 
 	for _, undeliveredMessage := range undeliveredMessages {
-		action := utils.ConstructDeliverMessageAction(undeliveredMessage)
+		action := actions.CreateMessagingDeliverRequestAction(undeliveredMessage)
 		client.WriteJSON(action)
 	}
 
 	return action
 }
 
-func handleGroupAddMemberRequest(client *structs.Client, action *structs.Action) *structs.Action {
+func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action) *actions.Action {
 	if !client.IsSignedIn {
 		utils.LogBody(v2Tag, "client not signed in")
 		failure := actions.CreateGroupAddMemberFailureAction([]string{"not signed in"})
@@ -177,7 +177,7 @@ func handleGroupAddMemberRequest(client *structs.Client, action *structs.Action)
 	return success
 }
 
-func handleGroupCreateRequest(client *structs.Client, action *structs.Action) {
+func handleGroupCreateRequest(client *clients.Client, action *actions.Action) {
 	errors := []string{}
 
 	groupName, groupNameOk := action.Payload["name"].(string)
@@ -227,7 +227,7 @@ func handleGroupCreateRequest(client *structs.Client, action *structs.Action) {
 		client.WriteFailure(constants.GroupCreateFailure, errors)
 	}
 
-	successAction := utils.ConstructCreateGroupSuccessAction(
+	successAction := actions.CreateGroupCreateSuccessAction(
 		messageGroup.ID,
 		messageGroup.Name,
 		messageGroup.MemberIDs,
@@ -237,7 +237,7 @@ func handleGroupCreateRequest(client *structs.Client, action *structs.Action) {
 	client.WriteJSON(successAction)
 }
 
-func handleGroupLeaveRequest(client *structs.Client, action *structs.Action) *structs.Action {
+func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *actions.Action {
 	if !client.IsSignedIn {
 		utils.LogBody(v2Tag, "client not signed in")
 		failure := actions.CreateGroupLeaveFailureAction([]string{"not signed in"})
@@ -271,7 +271,7 @@ func handleGroupLeaveRequest(client *structs.Client, action *structs.Action) *st
 	return success
 }
 
-func handleMessagingSendRequest(client *structs.Client, action *structs.Action) {
+func handleMessagingSendRequest(client *clients.Client, action *actions.Action) {
 	content, ok := action.Payload["content"].(string)
 	if !ok {
 		client.WriteFailure(constants.MessagingSendFailure, []string{"content is missing"})
@@ -326,20 +326,20 @@ func handleMessagingSendRequest(client *structs.Client, action *structs.Action) 
 		db.CreateReceipt(message.ID, recipientID)
 	}
 
-	globals.MessageDeliveryChan <- &structs.MessageDelivery{
+	globals.MessageDeliveryChan <- &globals.MessageDelivery{
 		Message:      message,
 		RecipientIDs: recipientIDs,
 	}
 
 	payload := make(map[string]interface{})
 	payload["message_id"] = message.ID
-	client.WriteJSON(&structs.Action{
+	client.WriteJSON(&actions.Action{
 		Payload: payload,
 		Type:    constants.MessagingSendSuccess,
 	})
 }
 
-func handleMessagingDeliverSuccess(client *structs.Client, action *structs.Action) {
+func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Action) {
 	messageID, ok := action.Payload["message_id"].(float64)
 	if !ok {
 		client.WriteFailure(constants.MessagingDeliverFailure, []string{"message_id is missing"})
@@ -354,7 +354,7 @@ func handleMessagingDeliverSuccess(client *structs.Client, action *structs.Actio
 	}
 }
 
-func handleVerificationRequestCodeRequest(client *structs.Client, action *structs.Action) {
+func handleVerificationRequestCodeRequest(client *clients.Client, action *actions.Action) {
 	countryCode, ok := action.Payload["country_code"].(string)
 	if !ok {
 		client.WriteFailure(
@@ -417,54 +417,74 @@ func handleVerificationRequestCodeRequest(client *structs.Client, action *struct
 	client.WriteEmptyAction(constants.VerificationRequestCodeSuccess)
 }
 
-func handleVerificationSubmitCodeRequest(client *structs.Client, action *structs.Action) {
-	var errors []string
+func handleVerificationSubmitCodeRequest(client *clients.Client, action *actions.Action) {
 	code, ok := action.Payload["code"].(string)
-
 	if !ok {
-		errors = append(errors, "you need to include code in payload")
-		client.WriteFailure(constants.VerificationSubmitCodeFailure, errors)
+		client.WriteFailure(
+			constants.VerificationSubmitCodeFailure,
+			[]string{"code"},
+		)
 		return
 	}
 
-	if !client.IsVerified() {
-		resp, err := api.GetTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, code)
+	isVerified, err := client.IsVerified()
+	if err != nil {
+		utils.LogBody(v2Tag, "error checking if client is verified. "+err.Error())
+		client.WriteFailure(
+			constants.VerificationSubmitCodeFailure,
+			[]string{"server error"},
+		)
+		return
+	}
 
+	if !isVerified {
+		resp, err := api.GetTwilioVerificationCheck(client.CountryCode, client.PhoneNumber, code)
 		if err != nil {
-			errors = append(errors, err.Error())
-			client.WriteFailure(constants.VerificationSubmitCodeFailure, errors)
+			utils.LogBody(v2Tag, "twilio verification check error. "+err.Error())
+			client.WriteFailure(
+				constants.VerificationSubmitCodeFailure,
+				[]string{"server error"},
+			)
 			return
 		}
 
 		body, err := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
-
 		if err != nil {
-			errors = append(errors, err.Error())
-			client.WriteFailure(constants.VerificationSubmitCodeFailure, errors)
+			utils.LogBody(v2Tag, "error reading response body. "+err.Error())
+			client.WriteFailure(
+				constants.VerificationSubmitCodeFailure,
+				[]string{"server error"},
+			)
 			return
 		}
 
 		r := map[string]interface{}{}
 		err = json.Unmarshal(body, &r)
-
 		if err != nil {
-			errors = append(errors, err.Error())
-			client.WriteFailure(constants.VerificationSubmitCodeFailure, errors)
+			utils.LogBody(v2Tag, "error parsing json. "+err.Error())
+			client.WriteFailure(
+				constants.VerificationSubmitCodeFailure,
+				[]string{"server error"},
+			)
 			return
 		}
 
 		if !r["success"].(bool) {
 			// unverifyClient(client, conn)
-			errors = append(errors, "twilio verification check failed")
-			client.WriteFailure(constants.VerificationSubmitCodeFailure, errors)
+			client.WriteFailure(
+				constants.VerificationSubmitCodeFailure,
+				[]string{"incorrect verification code"},
+			)
 			return
 		}
 	} else {
 		if client.VerificationCode != code {
 			// unverifyClient(client, conn)
-			errors = append(errors, "verification code doesn't match")
-			client.WriteFailure(constants.VerificationSubmitCodeFailure, errors)
+			client.WriteFailure(
+				constants.VerificationSubmitCodeFailure,
+				[]string{"incorrect verification code"},
+			)
 			return
 		}
 	}

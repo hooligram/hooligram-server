@@ -1,8 +1,28 @@
-package structs
+package clients
+
+import (
+	"github.com/gorilla/websocket"
+	"github.com/hooligram/hooligram-server/actions"
+	"github.com/hooligram/hooligram-server/db"
+)
+
+// Client .
+type Client struct {
+	db.Client
+
+	Conn       *websocket.Conn
+	IsSignedIn bool
+	SessionID  string
+}
 
 // IsVerified .
-func (client *Client) IsVerified() bool {
-	return client.VerificationCode != ""
+func (client *Client) IsVerified() (bool, error) {
+	verificationCode, err := db.ReadVerificationCode(client.ID)
+	if err != nil {
+		return false, err
+	}
+
+	return verificationCode != "", nil
 }
 
 // SignIn .
@@ -21,7 +41,7 @@ func (client *Client) SignIn(
 // WriteEmptyAction .
 func (client *Client) WriteEmptyAction(actionType string) {
 	// utils.writeEmptyAction(client.conn, actionType)
-	client.Conn.WriteJSON(Action{
+	client.Conn.WriteJSON(actions.Action{
 		map[string]interface{}{},
 		actionType,
 	})
@@ -30,7 +50,7 @@ func (client *Client) WriteEmptyAction(actionType string) {
 // WriteFailure .
 func (client *Client) WriteFailure(actionType string, errors []string) {
 	// utils.writeFailure(client.conn, actionType, errors)
-	client.Conn.WriteJSON(Action{
+	client.Conn.WriteJSON(actions.Action{
 		map[string]interface{}{
 			"errors": errors,
 		},
@@ -39,6 +59,6 @@ func (client *Client) WriteFailure(actionType string, errors []string) {
 }
 
 // WriteJSON .
-func (client *Client) WriteJSON(action *Action) {
+func (client *Client) WriteJSON(action *actions.Action) {
 	client.Conn.WriteJSON(*action)
 }

@@ -1,12 +1,12 @@
 package clients
 
 import (
+	"math/rand"
+
 	"github.com/gorilla/websocket"
-	"github.com/hooligram/hooligram-server/structs"
-	"github.com/hooligram/hooligram-server/utils"
 )
 
-var clients = make(map[*websocket.Conn]*structs.Client)
+var clients = make(map[*websocket.Conn]*Client)
 
 // Add .
 func Add(conn *websocket.Conn) error {
@@ -14,16 +14,16 @@ func Add(conn *websocket.Conn) error {
 		return nil
 	}
 
-	clients[conn] = &structs.Client{
+	clients[conn] = &Client{
 		Conn:      conn,
-		SessionID: utils.GenerateSessionID(),
+		SessionID: generateSessionID(),
 	}
 
 	return nil
 }
 
 // Get .
-func Get(conn *websocket.Conn) (*structs.Client, bool) {
+func Get(conn *websocket.Conn) (*Client, bool) {
 	client, ok := clients[conn]
 	return client, ok
 }
@@ -36,4 +36,15 @@ func Remove(conn *websocket.Conn) error {
 
 	delete(clients, conn)
 	return nil
+}
+
+func generateSessionID() string {
+	var runes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	sessionID := make([]rune, 8)
+
+	for i := range sessionID {
+		sessionID[i] = runes[rand.Intn(len(runes))]
+	}
+
+	return string(sessionID)
 }

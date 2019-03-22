@@ -3,11 +3,8 @@ package db
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"os"
-
-	"github.com/hooligram/hooligram-server/structs"
-	"github.com/hooligram/hooligram-server/utils"
+	"regexp"
 )
 
 const dbTag = "db"
@@ -17,29 +14,29 @@ var instance *sql.DB
 func init() {
 	dbUsername := os.Getenv("MYSQL_USERNAME")
 	if dbUsername == "" {
-		utils.LogInfo(dbTag, "MYSQL_USERNAME not set")
+		// utils.LogInfo(dbTag, "MYSQL_USERNAME not set")
 	}
 
 	dbPassword := os.Getenv("MYSQL_PASSWORD")
 	if dbPassword == "" {
-		utils.LogInfo(dbTag, "MYSQL_PASSWORD not set")
+		// utils.LogInfo(dbTag, "MYSQL_PASSWORD not set")
 	}
 
 	dbName := os.Getenv("MYSQL_DB_NAME")
 	if dbName == "" {
-		utils.LogInfo(dbTag, "MYSQL_DB_NAME not set")
+		// utils.LogInfo(dbTag, "MYSQL_DB_NAME not set")
 	}
 
 	var err error
 	instance, err = sql.Open("mysql", dbUsername+":"+dbPassword+"@/"+dbName)
 	if err != nil {
-		utils.LogInfo(dbTag, "mysql connection setup error. "+err.Error())
+		// utils.LogInfo(dbTag, "mysql connection setup error. "+err.Error())
 		return
 	}
 
 	err = instance.Ping()
 	if err != nil {
-		utils.LogInfo(dbTag, "mysql connection error. "+err.Error())
+		// utils.LogInfo(dbTag, "mysql connection error. "+err.Error())
 		return
 	}
 
@@ -116,7 +113,7 @@ func init() {
 }
 
 // CreateMessage .
-func CreateMessage(content string, messageGroupID, senderID int) (*structs.Message, error) {
+func CreateMessage(content string, messageGroupID, senderID int) (*Message, error) {
 	result, err := instance.Exec(`
 		INSERT INTO message ( content, message_group_id, sender_id ) VALUES ( ?, ?, ? );
 	`, content, messageGroupID, senderID)
@@ -141,7 +138,7 @@ func CreateMessage(content string, messageGroupID, senderID int) (*structs.Messa
 	var dateCreated string
 	rows.Scan(&dateCreated)
 
-	return &structs.Message{
+	return &Message{
 		ID:             int(id),
 		Content:        content,
 		MessageGroupID: messageGroupID,
@@ -151,10 +148,10 @@ func CreateMessage(content string, messageGroupID, senderID int) (*structs.Messa
 }
 
 // CreateMessageGroup .
-func CreateMessageGroup(groupName string, memberIDs []int) (*structs.MessageGroup, error) {
+func CreateMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error) {
 	tx, err := instance.Begin()
 	if err != nil {
-		utils.LogInfo(dbTag, "transaction error. "+err.Error())
+		// utils.LogInfo(dbTag, "transaction error. "+err.Error())
 		return nil, err
 	}
 
@@ -164,14 +161,14 @@ func CreateMessageGroup(groupName string, memberIDs []int) (*structs.MessageGrou
 	)
 	if err != nil {
 		tx.Rollback()
-		utils.LogInfo(dbTag, "error creating message group. "+err.Error())
+		// utils.LogInfo(dbTag, "error creating message group. "+err.Error())
 		return nil, err
 	}
 
 	groupID, err := result.LastInsertId()
 	if err != nil {
 		tx.Rollback()
-		utils.LogInfo(dbTag, "error creating message group. "+err.Error())
+		// utils.LogInfo(dbTag, "error creating message group. "+err.Error())
 		return nil, err
 	}
 
@@ -184,17 +181,17 @@ func CreateMessageGroup(groupName string, memberIDs []int) (*structs.MessageGrou
 		)
 		if err != nil {
 			tx.Rollback()
-			utils.LogInfo(
-				dbTag,
-				fmt.Sprintf("failed to create message group %v in instance. %v", groupName, err.Error()),
-			)
+			// utils.LogInfo(
+			// 	dbTag,
+			// 	fmt.Sprintf("failed to create message group %v in instance. %v", groupName, err.Error()),
+			// )
 			return nil, err
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		utils.LogInfo(dbTag, "error committing transaction. "+err.Error())
+		// utils.LogInfo(dbTag, "error committing transaction. "+err.Error())
 		return nil, err
 	}
 
@@ -203,21 +200,21 @@ func CreateMessageGroup(groupName string, memberIDs []int) (*structs.MessageGrou
 		groupID,
 	)
 	if err != nil {
-		utils.LogInfo(dbTag, "error retrieving message group. "+err.Error())
+		// utils.LogInfo(dbTag, "error retrieving message group. "+err.Error())
 		return nil, err
 	}
 
 	if !rows.Next() {
 		errorMsg := "message_group `%v` has been added to the database but "
 		errorMsg += "an error occured when querying it"
-		utils.LogInfo(dbTag, fmt.Sprintf(errorMsg, groupName))
+		// utils.LogInfo(dbTag, fmt.Sprintf(errorMsg, groupName))
 		return nil, errors.New(errorMsg)
 	}
 
 	var dateCreated string
 	rows.Scan(&dateCreated)
 
-	messageGroup := &structs.MessageGroup{
+	messageGroup := &MessageGroup{
 		ID:          groupID,
 		Name:        groupName,
 		DateCreated: dateCreated,
@@ -298,12 +295,12 @@ func DeleteMessageGroupMembers(groupID int, memberIDs []int) error {
 }
 
 // GetOrCreateClient .
-func GetOrCreateClient(countryCode, phoneNumber string) (*structs.Client, error) {
-	if countryCode != utils.GetDigits(countryCode) {
+func GetOrCreateClient(countryCode, phoneNumber string) (*Client, error) {
+	if countryCode != getDigits(countryCode) {
 		return nil, errors.New("country code should only contain digits")
 	}
 
-	if phoneNumber != utils.GetDigits(phoneNumber) {
+	if phoneNumber != getDigits(phoneNumber) {
 		return nil, errors.New("phone number should only contain digits")
 	}
 
@@ -354,16 +351,16 @@ func FindAllMessageGroupMemberIDs(messageGroupID int) ([]int, error) {
 }
 
 // FindAllVerifiedClients .
-func FindAllVerifiedClients() ([]*structs.Client, error) {
+func FindAllVerifiedClients() ([]*Client, error) {
 	rows, err := instance.Query(`
 		SELECT *
 		FROM client
 		WHERE verification_code IS NOT NULL;
 	`)
-	clients := []*structs.Client{}
+	clients := []*Client{}
 
 	if err != nil {
-		utils.LogInfo(dbTag, "failed to find verified clients. "+err.Error())
+		// utils.LogInfo(dbTag, "failed to find verified clients. "+err.Error())
 		return clients, err
 	}
 
@@ -374,7 +371,7 @@ func FindAllVerifiedClients() ([]*structs.Client, error) {
 		var verificationCode string
 		var dateCreated string
 		rows.Scan(&id, &countryCode, &phoneNumber, &verificationCode, &dateCreated)
-		client := structs.Client{
+		client := Client{
 			ID:               id,
 			CountryCode:      countryCode,
 			PhoneNumber:      phoneNumber,
@@ -388,7 +385,7 @@ func FindAllVerifiedClients() ([]*structs.Client, error) {
 }
 
 // FindClient .
-func FindClient(countryCode, phoneNumber string) (*structs.Client, error) {
+func FindClient(countryCode, phoneNumber string) (*Client, error) {
 	rows, err := instance.Query(`
 		SELECT *
 		FROM client
@@ -399,7 +396,7 @@ func FindClient(countryCode, phoneNumber string) (*structs.Client, error) {
 	`, countryCode, phoneNumber)
 
 	if err != nil {
-		utils.LogInfo(dbTag, "failed to find client. "+err.Error())
+		// utils.LogInfo(dbTag, "failed to find client. "+err.Error())
 		return nil, err
 	}
 
@@ -412,7 +409,7 @@ func FindClient(countryCode, phoneNumber string) (*structs.Client, error) {
 	var dateCreated string
 	rows.Scan(&id, nil, nil, &verificationCode, &dateCreated)
 
-	client := &structs.Client{
+	client := &Client{
 		ID:               id,
 		CountryCode:      countryCode,
 		PhoneNumber:      phoneNumber,
@@ -424,7 +421,7 @@ func FindClient(countryCode, phoneNumber string) (*structs.Client, error) {
 }
 
 // FindUndeliveredMessages .
-func FindUndeliveredMessages(recipientID int) ([]*structs.Message, error) {
+func FindUndeliveredMessages(recipientID int) ([]*Message, error) {
 	rows, err := instance.Query(`
 		SELECT message.*
 		FROM receipt JOIN message ON receipt.message_id = message.id
@@ -434,7 +431,7 @@ func FindUndeliveredMessages(recipientID int) ([]*structs.Message, error) {
 		return nil, err
 	}
 
-	var messages []*structs.Message
+	var messages []*Message
 
 	for rows.Next() {
 		var id int
@@ -443,7 +440,7 @@ func FindUndeliveredMessages(recipientID int) ([]*structs.Message, error) {
 		var senderID int
 		var dateCreated string
 		rows.Scan(&id, &content, &messageGroupID, &senderID, &dateCreated)
-		messages = append(messages, &structs.Message{
+		messages = append(messages, &Message{
 			ID:             id,
 			Content:        content,
 			MessageGroupID: messageGroupID,
@@ -456,7 +453,7 @@ func FindUndeliveredMessages(recipientID int) ([]*structs.Message, error) {
 }
 
 // FindVerifiedClient .
-func FindVerifiedClient(countryCode, phoneNumber, verificationCode string) (*structs.Client, bool) {
+func FindVerifiedClient(countryCode, phoneNumber, verificationCode string) (*Client, bool) {
 	rows, err := instance.Query(`
 		SELECT *
 		FROM client
@@ -465,7 +462,7 @@ func FindVerifiedClient(countryCode, phoneNumber, verificationCode string) (*str
 	`, countryCode, phoneNumber, verificationCode)
 
 	if err != nil {
-		utils.LogInfo(dbTag, "failed to find client. "+err.Error())
+		// utils.LogInfo(dbTag, "failed to find client. "+err.Error())
 		return nil, false
 	}
 
@@ -476,7 +473,7 @@ func FindVerifiedClient(countryCode, phoneNumber, verificationCode string) (*str
 	var id int
 	var dateCreated string
 	rows.Scan(&id, nil, nil, nil, &dateCreated)
-	client := structs.Client{
+	client := Client{
 		ID:               id,
 		CountryCode:      countryCode,
 		PhoneNumber:      phoneNumber,
@@ -502,7 +499,7 @@ func IsClientInMessageGroup(clientID, messageGroupID int) bool {
 }
 
 // UpdateClientVerificationCode .
-func UpdateClientVerificationCode(client *structs.Client, verificationCode string) error {
+func UpdateClientVerificationCode(client *Client, verificationCode string) error {
 	_, err := instance.Exec(`
 		UPDATE client SET verification_code = ? WHERE country_code = ? AND phone_number = ?;
 	`, verificationCode, client.CountryCode, client.PhoneNumber)
@@ -514,10 +511,16 @@ func UpdateClientVerificationCode(client *structs.Client, verificationCode strin
 	return nil
 }
 
+// UpdateReceiptDateDelivered .
 func UpdateReceiptDateDelivered(messageID, recipientID int) error {
 	_, err := instance.Exec(`
 		UPDATE receipt SET date_delivered = CURRENT_TIMESTAMP
 		WHERE message_id = ? AND recipient_id = ?;
 	`, messageID, recipientID)
 	return err
+}
+
+func getDigits(s string) string {
+	re := regexp.MustCompile("[^0-9]")
+	return re.ReplaceAllString(s, "")
 }
