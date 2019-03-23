@@ -84,108 +84,96 @@ func handleVerificationRequestCodeRequest(
 	return success
 }
 
-func handleVerificationSubmitCodeRequest(client *clients.Client, action *actions.Action) {
+func handleVerificationSubmitCodeRequest(
+	client *clients.Client,
+	action *actions.Action,
+) *actions.Action {
 	code, ok := action.Payload["code"].(string)
 	if !ok {
-		client.WriteFailure(
-			actions.VerificationSubmitCodeFailure,
-			[]string{"code"},
-		)
-		return
+		failure := actions.CreateVerificationSubmitCodeFailure([]string{"code not in payload"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	isVerified, err := client.IsVerified()
 	if err != nil {
 		utils.LogBody(v2Tag, "error checking if client is verified. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationSubmitCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	if isVerified {
 		verificationCode, err := client.GetVerificationCode()
 		if err != nil {
 			utils.LogBody(v2Tag, "error getting client verification code. "+err.Error())
-			client.WriteFailure(
-				actions.VerificationSubmitCodeFailure,
-				[]string{"server error"},
-			)
-			return
+			failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+			client.WriteJSON(failure)
+			return failure
 		}
 
 		if code == verificationCode {
-			client.WriteEmptyAction(actions.VerificationSubmitCodeSuccess)
+			success := CreateVerificationSubmitCodeSuccess()
+			client.WriteJSON(success)
+			return success
 		} else {
-			client.WriteFailure(
-				actions.VerificationSubmitCodeFailure,
-				[]string{"wrong verification code"},
-			)
+			failure := actions.CreateVerificationSubmitCodeFailure([]string{"incorrect verification code"})
+			client.WriteJSON(failure)
+			return failure
 		}
-
-		return
 	}
 
 	clientRow, err := db.ReadClientByID(client.GetID())
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading client by id. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationSubmitCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	resp, err := api.GetTwilioVerificationCheck(clientRow.CountryCode, clientRow.PhoneNumber, code)
 	if err != nil {
 		utils.LogBody(v2Tag, "twilio verification check error. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationSubmitCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading response body. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationSubmitCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	r := map[string]interface{}{}
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		utils.LogBody(v2Tag, "error parsing json. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationSubmitCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	if !r["success"].(bool) {
-		client.WriteFailure(
-			actions.VerificationSubmitCodeFailure,
+		failure := actions.CreateVerificationSubmitCodeFailure(
 			[]string{"incorrect verification code"},
 		)
-		return
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	err = db.UpdateClientVerificationCode(client.GetID(), code)
 	if err != nil {
 		utils.LogBody(v2Tag, "error setting client as verified. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationSubmitCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
-	client.WriteEmptyAction(actions.VerificationSubmitCodeSuccess)
+	success := CreateVerificationSubmitCodeSuccess()
+	client.WriteJSON(success)
+	return success
 }
