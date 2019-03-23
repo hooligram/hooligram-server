@@ -11,6 +11,11 @@ type Action struct {
 	Type    string                 `json:"type"`
 }
 
+// CreateAuthorizationSignInFailureAction .
+func CreateAuthorizationSignInFailureAction(errors []string) *Action {
+	return createFailureAction(constants.AuthorizationSignInFailure, errors)
+}
+
 // CreateGroupAddMemberFailureAction .
 func CreateGroupAddMemberFailureAction(errors []string) *Action {
 	return createFailureAction(constants.GroupAddMemberFailure, errors)

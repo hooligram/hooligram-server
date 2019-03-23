@@ -102,38 +102,6 @@ func V2(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleAuthorizationSignInRequest(client *clients.Client, action *actions.Action) *actions.Action {
-	countryCode := action.Payload["country_code"].(string)
-	phoneNumber := action.Payload["phone_number"].(string)
-	verificationCode := action.Payload["code"].(string)
-
-	client.SignIn(countryCode, phoneNumber, verificationCode)
-	if client == nil {
-		client.WriteFailure(constants.AuthorizationSignInFailure, []string{"sign in failed"})
-		return &actions.Action{
-			Payload: map[string]interface{}{
-				"errors": []string{"sign in failed"},
-			},
-			Type: constants.AuthorizationSignInFailure,
-		}
-	}
-
-	action.Type = constants.AuthorizationSignInSuccess
-	client.WriteJSON(action)
-
-	undeliveredMessages, err := db.FindUndeliveredMessages(client.GetID())
-	if err != nil {
-		utils.LogBody(v2Tag, "error finding messages to deliver. "+err.Error())
-	}
-
-	for _, undeliveredMessage := range undeliveredMessages {
-		action := actions.CreateMessagingDeliverRequestAction(undeliveredMessage)
-		client.WriteJSON(action)
-	}
-
-	return action
-}
-
 func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action) *actions.Action {
 	if !client.IsSignedIn() {
 		utils.LogBody(v2Tag, "client not signed in")
