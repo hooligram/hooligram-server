@@ -86,7 +86,7 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		case actions.MessagingDeliverSuccess:
 			result = handleMessagingDeliverSuccess(client, &action)
 		case actions.VerificationRequestCodeRequest:
-			handleVerificationRequestCodeRequest(client, &action)
+			result = handleVerificationRequestCodeRequest(client, &action)
 		case actions.VerificationSubmitCodeRequest:
 			handleVerificationSubmitCodeRequest(client, &action)
 		default:

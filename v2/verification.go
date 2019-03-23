@@ -11,85 +11,77 @@ import (
 	"github.com/hooligram/hooligram-server/utils"
 )
 
-func handleVerificationRequestCodeRequest(client *clients.Client, action *actions.Action) {
+func handleVerificationRequestCodeRequest(
+	client *clients.Client,
+	action *actions.Action,
+) *actions.Action {
 	countryCode, ok := action.Payload["country_code"].(string)
 	if !ok {
-		client.WriteFailure(
-			actions.VerificationRequestCodeFailure,
+		failure := actions.CreateVerificationRequestCodeFailure(
 			[]string{"country_code not in payload"},
 		)
-		return
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	phoneNumber, ok := action.Payload["phone_number"].(string)
 	if !ok {
-		client.WriteFailure(
-			actions.VerificationRequestCodeFailure,
+		failure := actions.CreateVerificationRequestCodeFailure(
 			[]string{"phone_number not in payload"},
 		)
-		return
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	ok, err := client.Register(countryCode, phoneNumber)
 	if err != nil {
-		utils.LogBody(v2Tag, "register client error. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationRequestCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		utils.LogBody(v2Tag, "error registering client. "+err.Error())
+		failure := actions.CreateVerificationRequestCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	if !ok {
-		client.WriteFailure(
-			actions.VerificationRequestCodeFailure,
-			[]string{"unable to register"},
-		)
-		return
+		failure := actions.CreateVerificationRequestCodeFailure([]string{"unable to register"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	resp, err := api.PostTwilioVerificationStart(countryCode, phoneNumber)
 	if err != nil {
-		utils.LogBody(v2Tag, "twilio verification start error. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationRequestCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		utils.LogBody(v2Tag, "error posting twilio verification start. "+err.Error())
+		failure := actions.CreateVerificationRequestCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading response body. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationRequestCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		failure := actions.CreateVerificationRequestCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	r := map[string]interface{}{}
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		utils.LogBody(v2Tag, "error parsing json. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationRequestCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		failure := actions.CreateVerificationRequestCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	if !r["success"].(bool) {
-		utils.LogBody(v2Tag, "twilio responded with failure. "+err.Error())
-		client.WriteFailure(
-			actions.VerificationRequestCodeFailure,
-			[]string{"server error"},
-		)
-		return
+		failure := actions.CreateVerificationRequestCodeFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
-	client.WriteEmptyAction(actions.VerificationRequestCodeSuccess)
+	success := actions.CreateVerificationRequestCodeSuccess()
+	client.WriteJSON(success)
+	return success
 }
 
 func handleVerificationSubmitCodeRequest(client *clients.Client, action *actions.Action) {
