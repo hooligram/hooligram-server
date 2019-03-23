@@ -10,27 +10,27 @@ import (
 func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action) *actions.Action {
 	if !client.IsSignedIn() {
 		utils.LogBody(v2Tag, "client not signed in")
-		failure := actions.CreateGroupAddMemberFailureAction([]string{"not signed in"})
+		failure := actions.CreateGroupAddMemberFailure([]string{"not signed in"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	groupID, ok := action.Payload["group_id"].(float64)
 	if !ok {
-		failure := actions.CreateGroupAddMemberFailureAction([]string{"group_id is missing"})
+		failure := actions.CreateGroupAddMemberFailure([]string{"group_id is missing"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	memberID, ok := action.Payload["member_id"].(float64)
 	if !ok {
-		failure := actions.CreateGroupAddMemberFailureAction([]string{"member_id is missing"})
+		failure := actions.CreateGroupAddMemberFailure([]string{"member_id is missing"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if !db.IsClientInMessageGroup(client.GetID(), int(groupID)) {
-		failure := actions.CreateGroupAddMemberFailureAction([]string{"not allowed"})
+		failure := actions.CreateGroupAddMemberFailure([]string{"not allowed"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -38,12 +38,12 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 	err := db.CreateMessageGroupMembers(int(groupID), []int{int(memberID)})
 	if err != nil {
 		utils.LogBody(v2Tag, "error adding new message group member. "+err.Error())
-		failure := actions.CreateGroupAddMemberFailureAction([]string{"server error"})
+		failure := actions.CreateGroupAddMemberFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
-	success := actions.CreateGroupAddMemberSuccessAction()
+	success := actions.CreateGroupAddMemberSuccess()
 	client.WriteJSON(success)
 	return success
 }
@@ -98,7 +98,7 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) {
 		client.WriteFailure(actions.GroupCreateFailure, errors)
 	}
 
-	successAction := actions.CreateGroupCreateSuccessAction(
+	successAction := actions.CreateGroupCreateSuccess(
 		messageGroup.ID,
 		messageGroup.Name,
 		messageGroup.MemberIDs,
@@ -111,20 +111,20 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) {
 func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *actions.Action {
 	if !client.IsSignedIn() {
 		utils.LogBody(v2Tag, "client not signed in")
-		failure := actions.CreateGroupLeaveFailureAction([]string{"not signed in"})
+		failure := actions.CreateGroupLeaveFailure([]string{"not signed in"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	groupID, ok := action.Payload["group_id"].(float64)
 	if !ok {
-		failure := actions.CreateGroupLeaveFailureAction(([]string{"group_id is missing"}))
+		failure := actions.CreateGroupLeaveFailure(([]string{"group_id is missing"}))
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if !db.IsClientInMessageGroup(client.GetID(), int(groupID)) {
-		failure := actions.CreateGroupLeaveFailureAction(([]string{"not in group"}))
+		failure := actions.CreateGroupLeaveFailure(([]string{"not in group"}))
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -132,12 +132,12 @@ func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *ac
 	err := db.DeleteMessageGroupMembers(int(groupID), []int{client.GetID()})
 	if err != nil {
 		utils.LogBody(v2Tag, "error removing client from message group. "+err.Error())
-		failure := actions.CreateGroupLeaveFailureAction(([]string{"server error"}))
+		failure := actions.CreateGroupLeaveFailure(([]string{"server error"}))
 		client.WriteJSON(failure)
 		return failure
 	}
 
-	success := actions.CreateGroupLeaveSuccessAction()
+	success := actions.CreateGroupLeaveSuccess()
 	client.WriteJSON(success)
 	return success
 }

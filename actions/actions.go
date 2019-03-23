@@ -10,23 +10,23 @@ type Action struct {
 	Type    string                 `json:"type"`
 }
 
-// CreateAuthorizationSignInFailureAction .
-func CreateAuthorizationSignInFailureAction(errors []string) *Action {
+// CreateAuthorizationSignInFailure .
+func CreateAuthorizationSignInFailure(errors []string) *Action {
 	return createFailureAction(AuthorizationSignInFailure, errors)
 }
 
-// CreateGroupAddMemberFailureAction .
-func CreateGroupAddMemberFailureAction(errors []string) *Action {
+// CreateGroupAddMemberFailure .
+func CreateGroupAddMemberFailure(errors []string) *Action {
 	return createFailureAction(GroupAddMemberFailure, errors)
 }
 
-// CreateGroupAddMemberSuccessAction .
-func CreateGroupAddMemberSuccessAction() *Action {
+// CreateGroupAddMemberSuccess .
+func CreateGroupAddMemberSuccess() *Action {
 	return createEmptyAction(GroupAddMemberSuccess)
 }
 
-// CreateGroupCreateSuccessAction .
-func CreateGroupCreateSuccessAction(
+// CreateGroupCreateSuccess .
+func CreateGroupCreateSuccess(
 	groupID int64,
 	groupName string,
 	memberIDs []int,
@@ -46,18 +46,18 @@ func CreateGroupCreateSuccessAction(
 	}
 }
 
-// CreateGroupLeaveFailureAction .
-func CreateGroupLeaveFailureAction(errors []string) *Action {
+// CreateGroupLeaveFailure .
+func CreateGroupLeaveFailure(errors []string) *Action {
 	return createFailureAction(GroupLeaveFailure, errors)
 }
 
-// CreateGroupLeaveSuccessAction .
-func CreateGroupLeaveSuccessAction() *Action {
+// CreateGroupLeaveSuccess .
+func CreateGroupLeaveSuccess() *Action {
 	return createEmptyAction(GroupLeaveSuccess)
 }
 
-// CreateMessagingDeliverRequestAction .
-func CreateMessagingDeliverRequestAction(message *db.Message) *Action {
+// CreateMessagingDeliverRequest .
+func CreateMessagingDeliverRequest(message *db.Message) *Action {
 	payload := make(map[string]interface{})
 	payload["content"] = message.Content
 	payload["date_created"] = message.DateCreated

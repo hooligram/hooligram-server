@@ -13,7 +13,7 @@ func handleAuthorizationSignInRequest(
 ) *actions.Action {
 	countryCode, ok := action.Payload["country_code"].(string)
 	if !ok {
-		failure := actions.CreateAuthorizationSignInFailureAction(
+		failure := actions.CreateAuthorizationSignInFailure(
 			[]string{"country_code not in payload"},
 		)
 		client.WriteJSON(failure)
@@ -22,7 +22,7 @@ func handleAuthorizationSignInRequest(
 
 	phoneNumber, ok := action.Payload["phone_number"].(string)
 	if !ok {
-		failure := actions.CreateAuthorizationSignInFailureAction(
+		failure := actions.CreateAuthorizationSignInFailure(
 			[]string{"phone_number not in payload"},
 		)
 		client.WriteJSON(failure)
@@ -31,7 +31,7 @@ func handleAuthorizationSignInRequest(
 
 	verificationCode, ok := action.Payload["code"].(string)
 	if !ok {
-		failure := actions.CreateAuthorizationSignInFailureAction([]string{"code not in payload"})
+		failure := actions.CreateAuthorizationSignInFailure([]string{"code not in payload"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -39,13 +39,13 @@ func handleAuthorizationSignInRequest(
 	clientRow, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading client by unique key. "+err.Error())
-		failure := actions.CreateAuthorizationSignInFailureAction([]string{"server error"})
+		failure := actions.CreateAuthorizationSignInFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if clientRow == nil || clientRow.VerificationCode != verificationCode {
-		failure := actions.CreateAuthorizationSignInFailureAction([]string{"not verified"})
+		failure := actions.CreateAuthorizationSignInFailure([]string{"not verified"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -53,13 +53,13 @@ func handleAuthorizationSignInRequest(
 	ok, err = client.SignIn(countryCode, phoneNumber, verificationCode)
 	if err != nil {
 		utils.LogBody(v2Tag, "error signing in client. "+err.Error())
-		failure := actions.CreateAuthorizationSignInFailureAction([]string{"server error"})
+		failure := actions.CreateAuthorizationSignInFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if !ok {
-		failure := actions.CreateAuthorizationSignInFailureAction([]string{"wrong credentials"})
+		failure := actions.CreateAuthorizationSignInFailure([]string{"wrong credentials"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -73,7 +73,7 @@ func handleAuthorizationSignInRequest(
 	}
 
 	for _, undeliveredMessage := range undeliveredMessages {
-		action := actions.CreateMessagingDeliverRequestAction(undeliveredMessage)
+		action := actions.CreateMessagingDeliverRequest(undeliveredMessage)
 		client.WriteJSON(action)
 	}
 
