@@ -84,17 +84,24 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 	return success
 }
 
-func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Action) {
+func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Action) *actions.Action {
 	messageID, ok := action.Payload["message_id"].(float64)
 	if !ok {
-		client.WriteFailure(actions.MessagingDeliverFailure, []string{"message_id is missing"})
-		return
+		failure := actions.CreateMessagingDeliverSuccessFailure([]string{"message_id is missing"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	recipientID := client.GetID()
 	err := db.UpdateReceiptDateDelivered(int(messageID), recipientID)
 	if err != nil {
-		client.WriteFailure(actions.MessagingDeliverFailure, []string{err.Error()})
-		return
+		utils.LogBody(v2Tag, "error updating receipt date delivered. "+err.Error())
+		failure := actions.CreateMessagingDeliverSuccessFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
+
+	success := actions.CreateMessagingDeliverSuccessSuccess()
+	client.WriteJSON(success)
+	return success
 }

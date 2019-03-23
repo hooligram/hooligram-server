@@ -18,9 +18,11 @@ const (
 	GroupLeaveRequest = "GROUP_LEAVE_REQUEST"
 	GroupLeaveSuccess = "GROUP_LEAVE_SUCCESS"
 
-	MessagingDeliverFailure = "MESSAGING_DELIVER_FAILURE"
-	MessagingDeliverRequest = "MESSAGING_DELIVER_REQUEST"
-	MessagingDeliverSuccess = "MESSAGING_DELIVER_SUCCESS"
+	MessagingDeliverFailure        = "MESSAGING_DELIVER_FAILURE"
+	MessagingDeliverRequest        = "MESSAGING_DELIVER_REQUEST"
+	MessagingDeliverSuccess        = "MESSAGING_DELIVER_SUCCESS"
+	MessagingDeliverSuccessFailure = "MESSAGING_DELIVER_SUCCESS_FAILURE"
+	MessagingDeliverSuccessSuccess = "MESSAGING_DELIVER_SUCCESS_SUCCESS"
 
 	MessagingSendFailure = "MESSAGING_SEND_FAILURE"
 	MessagingSendRequest = "MESSAGING_SEND_REQUEST"

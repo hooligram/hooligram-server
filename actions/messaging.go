@@ -1,5 +1,15 @@
 package actions
 
+// CreateMessagingDeliverSuccessFailure .
+func CreateMessagingDeliverSuccessFailure(errors []string) *Action {
+	return createFailureAction(MessagingDeliverSuccessFailure, errors)
+}
+
+// CreateMessagingDeliverSuccessSuccess .
+func CreateMessagingDeliverSuccessSuccess() *Action {
+	return createEmptyAction(MessagingDeliverSuccessSuccess)
+}
+
 // CreateMessagingSendFailure .
 func CreateMessagingSendFailure(errors []string) *Action {
 	return createFailureAction(MessagingSendFailure, errors)
