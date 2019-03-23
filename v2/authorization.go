@@ -3,7 +3,6 @@ package v2
 import (
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
-	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
 	"github.com/hooligram/hooligram-server/utils"
 )
@@ -65,7 +64,7 @@ func handleAuthorizationSignInRequest(
 		return failure
 	}
 
-	action.Type = constants.AuthorizationSignInSuccess
+	action.Type = actions.AuthorizationSignInSuccess
 	client.WriteJSON(action)
 
 	undeliveredMessages, err := db.FindUndeliveredMessages(client.GetID())

@@ -3,7 +3,6 @@ package v2
 import (
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
-	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
 	"github.com/hooligram/hooligram-server/globals"
 	"github.com/hooligram/hooligram-server/utils"
@@ -84,7 +83,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 	payload["message_id"] = message.ID
 	client.WriteJSON(&actions.Action{
 		Payload: payload,
-		Type:    constants.MessagingSendSuccess,
+		Type:    actions.MessagingSendSuccess,
 	})
 	return action
 }
@@ -92,14 +91,14 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Action) {
 	messageID, ok := action.Payload["message_id"].(float64)
 	if !ok {
-		client.WriteFailure(constants.MessagingDeliverFailure, []string{"message_id is missing"})
+		client.WriteFailure(actions.MessagingDeliverFailure, []string{"message_id is missing"})
 		return
 	}
 
 	recipientID := client.GetID()
 	err := db.UpdateReceiptDateDelivered(int(messageID), recipientID)
 	if err != nil {
-		client.WriteFailure(constants.MessagingDeliverFailure, []string{err.Error()})
+		client.WriteFailure(actions.MessagingDeliverFailure, []string{err.Error()})
 		return
 	}
 }

@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
 )
 
@@ -13,17 +12,17 @@ type Action struct {
 
 // CreateAuthorizationSignInFailureAction .
 func CreateAuthorizationSignInFailureAction(errors []string) *Action {
-	return createFailureAction(constants.AuthorizationSignInFailure, errors)
+	return createFailureAction(AuthorizationSignInFailure, errors)
 }
 
 // CreateGroupAddMemberFailureAction .
 func CreateGroupAddMemberFailureAction(errors []string) *Action {
-	return createFailureAction(constants.GroupAddMemberFailure, errors)
+	return createFailureAction(GroupAddMemberFailure, errors)
 }
 
 // CreateGroupAddMemberSuccessAction .
 func CreateGroupAddMemberSuccessAction() *Action {
-	return createEmptyAction(constants.GroupAddMemberSuccess)
+	return createEmptyAction(GroupAddMemberSuccess)
 }
 
 // CreateGroupCreateSuccessAction .
@@ -43,18 +42,18 @@ func CreateGroupCreateSuccessAction(
 
 	return &Action{
 		Payload: payload,
-		Type:    constants.GroupCreateSuccess,
+		Type:    GroupCreateSuccess,
 	}
 }
 
 // CreateGroupLeaveFailureAction .
 func CreateGroupLeaveFailureAction(errors []string) *Action {
-	return createFailureAction(constants.GroupLeaveFailure, errors)
+	return createFailureAction(GroupLeaveFailure, errors)
 }
 
 // CreateGroupLeaveSuccessAction .
 func CreateGroupLeaveSuccessAction() *Action {
-	return createEmptyAction(constants.GroupLeaveSuccess)
+	return createEmptyAction(GroupLeaveSuccess)
 }
 
 // CreateMessagingDeliverRequestAction .
@@ -67,13 +66,13 @@ func CreateMessagingDeliverRequestAction(message *db.Message) *Action {
 
 	return &Action{
 		Payload: payload,
-		Type:    constants.MessagingDeliverRequest,
+		Type:    MessagingDeliverRequest,
 	}
 }
 
 // CreateMessagingSendFailure .
 func CreateMessagingSendFailure(errors []string) *Action {
-	return createFailureAction(constants.MessagingSendFailure, errors)
+	return createFailureAction(MessagingSendFailure, errors)
 }
 
 func createEmptyAction(actionType string) *Action {

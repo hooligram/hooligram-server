@@ -1,6 +1,6 @@
-package constants
+package actions
 
-// .
+// Hooligram protocol V2 action types.
 const (
 	AuthorizationSignInFailure = "AUTHORIZATION_SIGN_IN_FAILURE"
 	AuthorizationSignInRequest = "AUTHORIZATION_SIGN_IN_REQUEST"

@@ -3,7 +3,6 @@ package v2
 import (
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
-	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
 	"github.com/hooligram/hooligram-server/utils"
 )
@@ -90,13 +89,13 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) {
 		}
 
 		utils.LogInfo(v2Tag, errorText)
-		client.WriteFailure(constants.GroupCreateFailure, errors)
+		client.WriteFailure(actions.GroupCreateFailure, errors)
 		return
 	}
 
 	messageGroup, err := db.CreateMessageGroup(groupName, memberIDs)
 	if err != nil {
-		client.WriteFailure(constants.GroupCreateFailure, errors)
+		client.WriteFailure(actions.GroupCreateFailure, errors)
 	}
 
 	successAction := actions.CreateGroupCreateSuccessAction(

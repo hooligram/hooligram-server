@@ -8,7 +8,6 @@ import (
 
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
-	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/globals"
 	"github.com/hooligram/hooligram-server/utils"
 )
@@ -74,21 +73,21 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		var result *actions.Action
 
 		switch action.Type {
-		case constants.AuthorizationSignInRequest:
+		case actions.AuthorizationSignInRequest:
 			result = handleAuthorizationSignInRequest(client, &action)
-		case constants.GroupAddMemberRequest:
+		case actions.GroupAddMemberRequest:
 			result = handleGroupAddMemberRequest(client, &action)
-		case constants.GroupCreateRequest:
+		case actions.GroupCreateRequest:
 			handleGroupCreateRequest(client, &action)
-		case constants.GroupLeaveRequest:
+		case actions.GroupLeaveRequest:
 			result = handleGroupLeaveRequest(client, &action)
-		case constants.MessagingSendRequest:
+		case actions.MessagingSendRequest:
 			handleMessagingSendRequest(client, &action)
-		case constants.MessagingDeliverSuccess:
+		case actions.MessagingDeliverSuccess:
 			handleMessagingDeliverSuccess(client, &action)
-		case constants.VerificationRequestCodeRequest:
+		case actions.VerificationRequestCodeRequest:
 			handleVerificationRequestCodeRequest(client, &action)
-		case constants.VerificationSubmitCodeRequest:
+		case actions.VerificationSubmitCodeRequest:
 			handleVerificationSubmitCodeRequest(client, &action)
 		default:
 		}
