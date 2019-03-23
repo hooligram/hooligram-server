@@ -113,7 +113,7 @@ func handleVerificationSubmitCodeRequest(
 		}
 
 		if code == verificationCode {
-			success := CreateVerificationSubmitCodeSuccess()
+			success := actions.CreateVerificationSubmitCodeSuccess()
 			client.WriteJSON(success)
 			return success
 		} else {
@@ -173,7 +173,7 @@ func handleVerificationSubmitCodeRequest(
 		return failure
 	}
 
-	success := CreateVerificationSubmitCodeSuccess()
+	success := actions.CreateVerificationSubmitCodeSuccess()
 	client.WriteJSON(success)
 	return success
 }
