@@ -48,64 +48,55 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 	return success
 }
 
-func handleGroupCreateRequest(client *clients.Client, action *actions.Action) {
-	errors := []string{}
+func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *actions.Action {
+	groupName, ok := action.Payload["name"].(string)
+	if !ok {
+		failure := actions.CreateGroupCreateFailure([]string{"name not in payload"})
+		client.WriteJSON(failure)
+		return failure
+	}
 
-	groupName, groupNameOk := action.Payload["name"].(string)
-	memberIDsPayload, memberIDsOk := action.Payload["member_ids"].([]interface{})
+	memberIDsPayload, ok := action.Payload["member_ids"].([]interface{})
+	if !ok {
+		failure := actions.CreateGroupCreateFailure([]string{"member_ids not in payload"})
+		client.WriteJSON(failure)
+		return failure
+	}
+
 	memberIDs := make([]int, len(memberIDsPayload))
 
 	for i, memberID := range memberIDsPayload {
 		memberIDs[i] = int(memberID.(float64))
 	}
 
-	if !groupNameOk {
-		errors = append(errors, "you need to include `name` in payload")
-	}
-
-	if !memberIDsOk {
-		errors = append(errors, "you need to include `member_ids` in payload")
-	}
-
-	if len(memberIDs) < 1 {
-		errors = append(
-			errors,
-			"you need to include at least one member in `member_ids` in payload",
-		)
+	if len(memberIDs) < 2 {
+		failure := actions.CreateGroupCreateFailure([]string{"need at least two members"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	if !utils.ContainsID(memberIDs, client.GetID()) {
-		errors = append(
-			errors,
-			"you need to include at the group creator in `member_ids` in payload",
-		)
-	}
-
-	if len(errors) > 0 {
-		errorText := ""
-
-		for _, err := range errors {
-			errorText += " " + err
-		}
-
-		utils.LogInfo(v2Tag, errorText)
-		client.WriteFailure(actions.GroupCreateFailure, errors)
-		return
+		failure := actions.CreateGroupCreateFailure([]string{"include group creator in member_ids"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
 	messageGroup, err := db.CreateMessageGroup(groupName, memberIDs)
 	if err != nil {
-		client.WriteFailure(actions.GroupCreateFailure, errors)
+		utils.LogBody(v2Tag, "error creating message group. "+err.Error())
+		failure := actions.CreateGroupCreateFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
 	}
 
-	successAction := actions.CreateGroupCreateSuccess(
+	success := actions.CreateGroupCreateSuccess(
 		messageGroup.ID,
 		messageGroup.Name,
 		messageGroup.MemberIDs,
 		messageGroup.DateCreated,
 	)
-
-	client.WriteJSON(successAction)
+	client.WriteJSON(success)
+	return success
 }
 
 func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *actions.Action {

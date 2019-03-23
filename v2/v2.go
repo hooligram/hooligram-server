@@ -78,7 +78,7 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		case actions.GroupAddMemberRequest:
 			result = handleGroupAddMemberRequest(client, &action)
 		case actions.GroupCreateRequest:
-			handleGroupCreateRequest(client, &action)
+			result = handleGroupCreateRequest(client, &action)
 		case actions.GroupLeaveRequest:
 			result = handleGroupLeaveRequest(client, &action)
 		case actions.MessagingSendRequest:

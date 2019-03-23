@@ -25,27 +25,6 @@ func CreateGroupAddMemberSuccess() *Action {
 	return createEmptyAction(GroupAddMemberSuccess)
 }
 
-// CreateGroupCreateSuccess .
-func CreateGroupCreateSuccess(
-	groupID int64,
-	groupName string,
-	memberIDs []int,
-	dateCreated string,
-) *Action {
-	payload := make(map[string]interface{})
-	memberIDs = append([]int(nil), memberIDs...)
-
-	payload["id"] = groupID
-	payload["date_created"] = dateCreated
-	payload["member_ids"] = memberIDs
-	payload["name"] = groupName
-
-	return &Action{
-		Payload: payload,
-		Type:    GroupCreateSuccess,
-	}
-}
-
 // CreateGroupLeaveFailure .
 func CreateGroupLeaveFailure(errors []string) *Action {
 	return createFailureAction(GroupLeaveFailure, errors)
