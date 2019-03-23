@@ -8,7 +8,10 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/hooligram/hooligram-server/actions"
+	"github.com/hooligram/hooligram-server/clients"
 	"github.com/hooligram/hooligram-server/globals"
+	"github.com/hooligram/hooligram-server/utils"
 	"github.com/hooligram/hooligram-server/v2"
 )
 
@@ -34,28 +37,24 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/v2", v2.V2)
 
-	// go deliverMessage()
+	go deliverMessage()
 
 	http.ListenAndServe(":"+port, router)
 }
 
-// func deliverMessage() {
-// 	for {
-// 		messageDelivery := <-globals.MessageDeliveryChan
-// 		message := messageDelivery.Message
-// 		recipientIDs := messageDelivery.RecipientIDs
+func deliverMessage() {
+	for {
+		messageDelivery := <-globals.MessageDeliveryChan
+		message := messageDelivery.Message
+		recipientIDs := messageDelivery.RecipientIDs
 
-// 		for conn, client := range clients {
-// 			if !containsID(recipientIDs, client.ID) {
-// 				continue
-// 			}
+		for _, client := range clients.GetSignedInClients() {
+			if !utils.ContainsID(recipientIDs, client.GetID()) {
+				continue
+			}
 
-// 			if conn == nil {
-// 				continue
-// 			}
-
-// 			action := constructDeliverMessageAction(message)
-// 			conn.WriteJSON(action)
-// 		}
-// 	}
-// }
+			action := actions.CreateMessagingDeliverRequestAction(message)
+			client.WriteJSON(action)
+		}
+	}
+}

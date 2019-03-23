@@ -30,6 +30,21 @@ func Get(conn *websocket.Conn) (*Client, bool) {
 	return client, ok
 }
 
+// GetSignedInClients .
+func GetSignedInClients() []*Client {
+	signedInclients := []*Client{}
+
+	for _, client := range clients {
+		if !client.isSignedIn {
+			continue
+		}
+
+		signedInclients = append(signedInclients, client)
+	}
+
+	return signedInclients
+}
+
 // Remove .
 func Remove(conn *websocket.Conn) error {
 	if _, ok := clients[conn]; !ok {

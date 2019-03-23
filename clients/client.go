@@ -92,6 +92,7 @@ func (client *Client) SignIn(
 	}
 
 	client.id = row.ID
+	client.isSignedIn = true
 	return true, nil
 }
 
