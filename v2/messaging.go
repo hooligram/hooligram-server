@@ -60,14 +60,14 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return failure
 	}
 
-	var recipientIDs []int
+	var recipientIDs = make([]int, len(messageGroupMemberIDs))
 
-	for _, recipientID := range messageGroupMemberIDs {
+	for i, recipientID := range messageGroupMemberIDs {
 		if recipientID == int(message.SenderID) {
 			continue
 		}
 
-		recipientIDs = append(recipientIDs, recipientID)
+		recipientIDs[i] = recipientID
 	}
 
 	for _, recipientID := range recipientIDs {
@@ -79,13 +79,9 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		RecipientIDs: recipientIDs,
 	}
 
-	payload := make(map[string]interface{})
-	payload["message_id"] = message.ID
-	client.WriteJSON(&actions.Action{
-		Payload: payload,
-		Type:    actions.MessagingSendSuccess,
-	})
-	return action
+	success := actions.CreateMessagingSendSuccess(message.ID)
+	client.WriteJSON(success)
+	return success
 }
 
 func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Action) {

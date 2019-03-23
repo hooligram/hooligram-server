@@ -49,11 +49,6 @@ func CreateMessagingDeliverRequest(message *db.Message) *Action {
 	}
 }
 
-// CreateMessagingSendFailure .
-func CreateMessagingSendFailure(errors []string) *Action {
-	return createFailureAction(MessagingSendFailure, errors)
-}
-
 func createEmptyAction(actionType string) *Action {
 	payload := make(map[string]interface{})
 

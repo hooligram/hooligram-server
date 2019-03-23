@@ -82,7 +82,7 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		case actions.GroupLeaveRequest:
 			result = handleGroupLeaveRequest(client, &action)
 		case actions.MessagingSendRequest:
-			handleMessagingSendRequest(client, &action)
+			result = handleMessagingSendRequest(client, &action)
 		case actions.MessagingDeliverSuccess:
 			handleMessagingDeliverSuccess(client, &action)
 		case actions.VerificationRequestCodeRequest:
