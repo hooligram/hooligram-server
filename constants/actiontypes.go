@@ -1,4 +1,4 @@
-package actions
+package constants
 
 // Hooligram protocol V2 action types.
 const (

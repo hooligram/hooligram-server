@@ -1,30 +1,32 @@
 package actions
 
+import "github.com/hooligram/hooligram-server/constants"
+
 //////////////////////
 // GROUP_ADD_MEMBER //
 //////////////////////
 
-// CreateGroupAddMemberFailure .
-func CreateGroupAddMemberFailure(errors []string) *Action {
-	return createFailureAction(GroupAddMemberFailure, errors)
+// GroupAddMemberFailure .
+func GroupAddMemberFailure(errors []string) *Action {
+	return constructFailureAction(constants.GroupAddMemberFailure, errors)
 }
 
-// CreateGroupAddMemberSuccess .
-func CreateGroupAddMemberSuccess() *Action {
-	return createEmptyAction(GroupAddMemberSuccess)
+// GroupAddMemberSuccess .
+func GroupAddMemberSuccess() *Action {
+	return constructEmptyAction(constants.GroupAddMemberSuccess)
 }
 
 //////////////////
 // GROUP_CREATE //
 //////////////////
 
-// CreateGroupCreateFailure .
-func CreateGroupCreateFailure(errors []string) *Action {
-	return createFailureAction(GroupCreateFailure, errors)
+// GroupCreateFailure .
+func GroupCreateFailure(errors []string) *Action {
+	return constructFailureAction(constants.GroupCreateFailure, errors)
 }
 
-// CreateGroupCreateSuccess .
-func CreateGroupCreateSuccess(
+// GroupCreateSuccess .
+func GroupCreateSuccess(
 	groupID int64,
 	groupName string,
 	memberIDs []int,
@@ -40,7 +42,7 @@ func CreateGroupCreateSuccess(
 
 	return &Action{
 		Payload: payload,
-		Type:    GroupCreateSuccess,
+		Type:    constants.GroupCreateSuccess,
 	}
 }
 
@@ -48,12 +50,12 @@ func CreateGroupCreateSuccess(
 // GROUP_LEAVE //
 /////////////////
 
-// CreateGroupLeaveFailure .
-func CreateGroupLeaveFailure(errors []string) *Action {
-	return createFailureAction(GroupLeaveFailure, errors)
+// GroupLeaveFailure .
+func GroupLeaveFailure(errors []string) *Action {
+	return constructFailureAction(constants.GroupLeaveFailure, errors)
 }
 
-// CreateGroupLeaveSuccess .
-func CreateGroupLeaveSuccess() *Action {
-	return createEmptyAction(GroupLeaveSuccess)
+// GroupLeaveSuccess .
+func GroupLeaveSuccess() *Action {
+	return constructEmptyAction(constants.GroupLeaveSuccess)
 }

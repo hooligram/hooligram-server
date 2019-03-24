@@ -1,29 +1,31 @@
 package actions
 
+import "github.com/hooligram/hooligram-server/constants"
+
 ///////////////////////////////
 // VERIFICATION_REQUEST_CODE //
 ///////////////////////////////
 
-// CreateVerificationRequestCodeFailure .
-func CreateVerificationRequestCodeFailure(errors []string) *Action {
-	return createFailureAction(VerificationRequestCodeFailure, errors)
+// VerificationRequestCodeFailure .
+func VerificationRequestCodeFailure(errors []string) *Action {
+	return constructFailureAction(constants.VerificationRequestCodeFailure, errors)
 }
 
-// CreateVerificationRequestCodeSuccess .
-func CreateVerificationRequestCodeSuccess() *Action {
-	return createEmptyAction(VerificationRequestCodeSuccess)
+// VerificationRequestCodeSuccess .
+func VerificationRequestCodeSuccess() *Action {
+	return constructEmptyAction(constants.VerificationRequestCodeSuccess)
 }
 
 //////////////////////////////
 // VERIFICATION_SUBMIT_CODE //
 //////////////////////////////
 
-// CreateVerificationSubmitCodeFailure .
-func CreateVerificationSubmitCodeFailure(errors []string) *Action {
-	return createFailureAction(VerificationSubmitCodeFailure, errors)
+// VerificationSubmitCodeFailure .
+func VerificationSubmitCodeFailure(errors []string) *Action {
+	return constructFailureAction(constants.VerificationSubmitCodeFailure, errors)
 }
 
-// CreateVerificationSubmitCodeSuccess .
-func CreateVerificationSubmitCodeSuccess() *Action {
-	return createEmptyAction(VerificationSubmitCodeSuccess)
+// VerificationSubmitCodeSuccess .
+func VerificationSubmitCodeSuccess() *Action {
+	return constructEmptyAction(constants.VerificationSubmitCodeSuccess)
 }

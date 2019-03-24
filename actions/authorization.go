@@ -1,10 +1,12 @@
 package actions
 
+import "github.com/hooligram/hooligram-server/constants"
+
 ///////////////////////////
 // AUTHORIZATION_SIGN_IN //
 ///////////////////////////
 
-// CreateAuthorizationSignInFailure .
-func CreateAuthorizationSignInFailure(errors []string) *Action {
-	return createFailureAction(AuthorizationSignInFailure, errors)
+// AuthorizationSignInFailure .
+func AuthorizationSignInFailure(errors []string) *Action {
+	return constructFailureAction(constants.AuthorizationSignInFailure, errors)
 }

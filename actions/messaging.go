@@ -1,13 +1,16 @@
 package actions
 
-import "github.com/hooligram/hooligram-server/db"
+import (
+	"github.com/hooligram/hooligram-server/constants"
+	"github.com/hooligram/hooligram-server/db"
+)
 
 //////////////////////////////
 // CREATE_MESSAGING_DELIVER //
 //////////////////////////////
 
-// CreateMessagingDeliverRequest .
-func CreateMessagingDeliverRequest(message *db.Message) *Action {
+// MessagingDeliverRequest .
+func MessagingDeliverRequest(message *db.Message) *Action {
 	payload := make(map[string]interface{})
 	payload["content"] = message.Content
 	payload["date_created"] = message.DateCreated
@@ -16,36 +19,36 @@ func CreateMessagingDeliverRequest(message *db.Message) *Action {
 
 	return &Action{
 		Payload: payload,
-		Type:    MessagingDeliverRequest,
+		Type:    constants.MessagingDeliverRequest,
 	}
 }
 
-// CreateMessagingDeliverSuccessFailure .
-func CreateMessagingDeliverSuccessFailure(errors []string) *Action {
-	return createFailureAction(MessagingDeliverSuccessFailure, errors)
+// MessagingDeliverSuccessFailure .
+func MessagingDeliverSuccessFailure(errors []string) *Action {
+	return constructFailureAction(constants.MessagingDeliverSuccessFailure, errors)
 }
 
-// CreateMessagingDeliverSuccessSuccess .
-func CreateMessagingDeliverSuccessSuccess() *Action {
-	return createEmptyAction(MessagingDeliverSuccessSuccess)
+// MessagingDeliverSuccessSuccess .
+func MessagingDeliverSuccessSuccess() *Action {
+	return constructEmptyAction(constants.MessagingDeliverSuccessSuccess)
 }
 
 ///////////////////////////
 // CREATE_MESSAGING_SEND //
 ///////////////////////////
 
-// CreateMessagingSendFailure .
-func CreateMessagingSendFailure(errors []string) *Action {
-	return createFailureAction(MessagingSendFailure, errors)
+// MessagingSendFailure .
+func MessagingSendFailure(errors []string) *Action {
+	return constructFailureAction(constants.MessagingSendFailure, errors)
 }
 
-// CreateMessagingSendSuccess .
-func CreateMessagingSendSuccess(messageID int) *Action {
+// MessagingSendSuccess .
+func MessagingSendSuccess(messageID int) *Action {
 	payload := make(map[string]interface{})
 	payload["message_id"] = messageID
 
 	return &Action{
 		Payload: payload,
-		Type:    MessagingSendSuccess,
+		Type:    constants.MessagingSendSuccess,
 	}
 }

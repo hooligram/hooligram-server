@@ -27,7 +27,7 @@ func DeliverMessage() {
 				continue
 			}
 
-			action := actions.CreateMessagingDeliverRequest(message)
+			action := actions.MessagingDeliverRequest(message)
 			client.WriteJSON(action)
 		}
 	}

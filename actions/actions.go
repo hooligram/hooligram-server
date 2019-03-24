@@ -6,7 +6,7 @@ type Action struct {
 	Type    string                 `json:"type"`
 }
 
-func createEmptyAction(actionType string) *Action {
+func constructEmptyAction(actionType string) *Action {
 	payload := make(map[string]interface{})
 
 	return &Action{
@@ -15,7 +15,7 @@ func createEmptyAction(actionType string) *Action {
 	}
 }
 
-func createFailureAction(actionType string, errors []string) *Action {
+func constructFailureAction(actionType string, errors []string) *Action {
 	payload := make(map[string]interface{})
 	payload["errors"] = errors
 

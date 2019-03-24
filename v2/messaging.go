@@ -11,33 +11,33 @@ import (
 func handleMessagingSendRequest(client *clients.Client, action *actions.Action) *actions.Action {
 	content, ok := action.Payload["content"].(string)
 	if !ok {
-		failure := actions.CreateMessagingSendFailure([]string{"content not in payload"})
+		failure := actions.MessagingSendFailure([]string{"content not in payload"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	messageGroupID, ok := action.Payload["message_group_id"].(float64)
 	if !ok {
-		failure := actions.CreateMessagingSendFailure([]string{"message_group_id not in payload"})
+		failure := actions.MessagingSendFailure([]string{"message_group_id not in payload"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	senderID, ok := action.Payload["sender_id"].(float64)
 	if !ok {
-		failure := actions.CreateMessagingSendFailure([]string{"sender_id not in payload"})
+		failure := actions.MessagingSendFailure([]string{"sender_id not in payload"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if client.GetID() != int(senderID) {
-		failure := actions.CreateMessagingSendFailure([]string{"sender id mismatch"})
+		failure := actions.MessagingSendFailure([]string{"sender id mismatch"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if !db.ReadIsClientInMessageGroup(int(senderID), int(messageGroupID)) {
-		failure := actions.CreateMessagingSendFailure(
+		failure := actions.MessagingSendFailure(
 			[]string{"sender doesn't belong to message group"},
 		)
 		client.WriteJSON(failure)
@@ -47,7 +47,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 	message, err := db.CreateMessage(content, int(messageGroupID), int(senderID))
 	if err != nil {
 		utils.LogBody(v2Tag, "error creating message. "+err.Error())
-		failure := actions.CreateMessagingSendFailure([]string{"server error"})
+		failure := actions.MessagingSendFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -55,7 +55,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 	messageGroupMemberIDs, err := db.ReadMessageGroupMemberIDs(message.MessageGroupID)
 	if err != nil {
 		utils.LogBody(v2Tag, "error finding meesage group member ids. "+err.Error())
-		failure := actions.CreateMessagingSendFailure([]string{"server error"})
+		failure := actions.MessagingSendFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -79,7 +79,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		RecipientIDs: recipientIDs,
 	}
 
-	success := actions.CreateMessagingSendSuccess(message.ID)
+	success := actions.MessagingSendSuccess(message.ID)
 	client.WriteJSON(success)
 	return success
 }
@@ -87,7 +87,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Action) *actions.Action {
 	messageID, ok := action.Payload["message_id"].(float64)
 	if !ok {
-		failure := actions.CreateMessagingDeliverSuccessFailure([]string{"message_id is missing"})
+		failure := actions.MessagingDeliverSuccessFailure([]string{"message_id is missing"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -96,12 +96,12 @@ func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Actio
 	err := db.UpdateReceiptDateDelivered(int(messageID), recipientID)
 	if err != nil {
 		utils.LogBody(v2Tag, "error updating receipt date delivered. "+err.Error())
-		failure := actions.CreateMessagingDeliverSuccessFailure([]string{"server error"})
+		failure := actions.MessagingDeliverSuccessFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
-	success := actions.CreateMessagingDeliverSuccessSuccess()
+	success := actions.MessagingDeliverSuccessSuccess()
 	client.WriteJSON(success)
 	return success
 }

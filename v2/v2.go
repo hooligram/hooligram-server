@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
+	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/utils"
 )
 
@@ -75,21 +76,21 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		var result *actions.Action
 
 		switch action.Type {
-		case actions.AuthorizationSignInRequest:
+		case constants.AuthorizationSignInRequest:
 			result = handleAuthorizationSignInRequest(client, &action)
-		case actions.GroupAddMemberRequest:
+		case constants.GroupAddMemberRequest:
 			result = handleGroupAddMemberRequest(client, &action)
-		case actions.GroupCreateRequest:
+		case constants.GroupCreateRequest:
 			result = handleGroupCreateRequest(client, &action)
-		case actions.GroupLeaveRequest:
+		case constants.GroupLeaveRequest:
 			result = handleGroupLeaveRequest(client, &action)
-		case actions.MessagingSendRequest:
+		case constants.MessagingSendRequest:
 			result = handleMessagingSendRequest(client, &action)
-		case actions.MessagingDeliverSuccess:
+		case constants.MessagingDeliverSuccess:
 			result = handleMessagingDeliverSuccess(client, &action)
-		case actions.VerificationRequestCodeRequest:
+		case constants.VerificationRequestCodeRequest:
 			result = handleVerificationRequestCodeRequest(client, &action)
-		case actions.VerificationSubmitCodeRequest:
+		case constants.VerificationSubmitCodeRequest:
 			result = handleVerificationSubmitCodeRequest(client, &action)
 		default:
 		}

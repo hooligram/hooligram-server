@@ -17,7 +17,7 @@ func handleVerificationRequestCodeRequest(
 ) *actions.Action {
 	countryCode, ok := action.Payload["country_code"].(string)
 	if !ok {
-		failure := actions.CreateVerificationRequestCodeFailure(
+		failure := actions.VerificationRequestCodeFailure(
 			[]string{"country_code not in payload"},
 		)
 		client.WriteJSON(failure)
@@ -26,7 +26,7 @@ func handleVerificationRequestCodeRequest(
 
 	phoneNumber, ok := action.Payload["phone_number"].(string)
 	if !ok {
-		failure := actions.CreateVerificationRequestCodeFailure(
+		failure := actions.VerificationRequestCodeFailure(
 			[]string{"phone_number not in payload"},
 		)
 		client.WriteJSON(failure)
@@ -36,13 +36,13 @@ func handleVerificationRequestCodeRequest(
 	ok, err := client.Register(countryCode, phoneNumber)
 	if err != nil {
 		utils.LogBody(v2Tag, "error registering client. "+err.Error())
-		failure := actions.CreateVerificationRequestCodeFailure([]string{"server error"})
+		failure := actions.VerificationRequestCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if !ok {
-		failure := actions.CreateVerificationRequestCodeFailure([]string{"unable to register"})
+		failure := actions.VerificationRequestCodeFailure([]string{"unable to register"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -50,7 +50,7 @@ func handleVerificationRequestCodeRequest(
 	resp, err := api.PostTwilioVerificationStart(countryCode, phoneNumber)
 	if err != nil {
 		utils.LogBody(v2Tag, "error posting twilio verification start. "+err.Error())
-		failure := actions.CreateVerificationRequestCodeFailure([]string{"server error"})
+		failure := actions.VerificationRequestCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -59,7 +59,7 @@ func handleVerificationRequestCodeRequest(
 	resp.Body.Close()
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading response body. "+err.Error())
-		failure := actions.CreateVerificationRequestCodeFailure([]string{"server error"})
+		failure := actions.VerificationRequestCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -68,18 +68,18 @@ func handleVerificationRequestCodeRequest(
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		utils.LogBody(v2Tag, "error parsing json. "+err.Error())
-		failure := actions.CreateVerificationRequestCodeFailure([]string{"server error"})
+		failure := actions.VerificationRequestCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if !r["success"].(bool) {
-		failure := actions.CreateVerificationRequestCodeFailure([]string{"server error"})
+		failure := actions.VerificationRequestCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
-	success := actions.CreateVerificationRequestCodeSuccess()
+	success := actions.VerificationRequestCodeSuccess()
 	client.WriteJSON(success)
 	return success
 }
@@ -90,7 +90,7 @@ func handleVerificationSubmitCodeRequest(
 ) *actions.Action {
 	code, ok := action.Payload["code"].(string)
 	if !ok {
-		failure := actions.CreateVerificationSubmitCodeFailure([]string{"code not in payload"})
+		failure := actions.VerificationSubmitCodeFailure([]string{"code not in payload"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -98,7 +98,7 @@ func handleVerificationSubmitCodeRequest(
 	isVerified, err := client.IsVerified()
 	if err != nil {
 		utils.LogBody(v2Tag, "error checking if client is verified. "+err.Error())
-		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		failure := actions.VerificationSubmitCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -107,18 +107,18 @@ func handleVerificationSubmitCodeRequest(
 		verificationCode, err := client.GetVerificationCode()
 		if err != nil {
 			utils.LogBody(v2Tag, "error getting client verification code. "+err.Error())
-			failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+			failure := actions.VerificationSubmitCodeFailure([]string{"server error"})
 			client.WriteJSON(failure)
 			return failure
 		}
 
 		if code == verificationCode {
-			success := actions.CreateVerificationSubmitCodeSuccess()
+			success := actions.VerificationSubmitCodeSuccess()
 			client.WriteJSON(success)
 			return success
 		}
 		{
-			failure := actions.CreateVerificationSubmitCodeFailure([]string{"incorrect verification code"})
+			failure := actions.VerificationSubmitCodeFailure([]string{"incorrect verification code"})
 			client.WriteJSON(failure)
 			return failure
 		}
@@ -127,7 +127,7 @@ func handleVerificationSubmitCodeRequest(
 	clientRow, err := db.ReadClientByID(client.GetID())
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading client by id. "+err.Error())
-		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		failure := actions.VerificationSubmitCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -135,7 +135,7 @@ func handleVerificationSubmitCodeRequest(
 	resp, err := api.GetTwilioVerificationCheck(clientRow.CountryCode, clientRow.PhoneNumber, code)
 	if err != nil {
 		utils.LogBody(v2Tag, "twilio verification check error. "+err.Error())
-		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		failure := actions.VerificationSubmitCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -144,7 +144,7 @@ func handleVerificationSubmitCodeRequest(
 	resp.Body.Close()
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading response body. "+err.Error())
-		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		failure := actions.VerificationSubmitCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -153,13 +153,13 @@ func handleVerificationSubmitCodeRequest(
 	err = json.Unmarshal(body, &r)
 	if err != nil {
 		utils.LogBody(v2Tag, "error parsing json. "+err.Error())
-		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		failure := actions.VerificationSubmitCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if !r["success"].(bool) {
-		failure := actions.CreateVerificationSubmitCodeFailure(
+		failure := actions.VerificationSubmitCodeFailure(
 			[]string{"incorrect verification code"},
 		)
 		client.WriteJSON(failure)
@@ -169,12 +169,12 @@ func handleVerificationSubmitCodeRequest(
 	err = db.UpdateClientVerificationCode(client.GetID(), code)
 	if err != nil {
 		utils.LogBody(v2Tag, "error setting client as verified. "+err.Error())
-		failure := actions.CreateVerificationSubmitCodeFailure([]string{"server error"})
+		failure := actions.VerificationSubmitCodeFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
-	success := actions.CreateVerificationSubmitCodeSuccess()
+	success := actions.VerificationSubmitCodeSuccess()
 	client.WriteJSON(success)
 	return success
 }
