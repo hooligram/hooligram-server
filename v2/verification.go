@@ -116,7 +116,8 @@ func handleVerificationSubmitCodeRequest(
 			success := actions.CreateVerificationSubmitCodeSuccess()
 			client.WriteJSON(success)
 			return success
-		} else {
+		}
+		{
 			failure := actions.CreateVerificationSubmitCodeFailure([]string{"incorrect verification code"})
 			client.WriteJSON(failure)
 			return failure
