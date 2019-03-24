@@ -10,3 +10,8 @@ import "github.com/hooligram/hooligram-server/constants"
 func AuthorizationSignInFailure(errors []string) *Action {
 	return constructFailureAction(constants.AuthorizationSignInFailure, errors)
 }
+
+// AuthorizationSignInSuccess .
+func AuthorizationSignInSuccess() *Action {
+	return constructEmptyAction(constants.AuthorizationSignInSuccess)
+}
