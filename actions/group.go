@@ -26,19 +26,9 @@ func GroupCreateFailure(errors []string) *Action {
 }
 
 // GroupCreateSuccess .
-func GroupCreateSuccess(
-	groupID int64,
-	groupName string,
-	memberIDs []int,
-	dateCreated string,
-) *Action {
+func GroupCreateSuccess(groupID int64) *Action {
 	payload := make(map[string]interface{})
-	memberIDs = append([]int(nil), memberIDs...)
-
-	payload["id"] = groupID
-	payload["date_created"] = dateCreated
-	payload["member_ids"] = memberIDs
-	payload["name"] = groupName
+	payload["message_group_id"] = groupID
 
 	return &Action{
 		Payload: payload,

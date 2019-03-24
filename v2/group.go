@@ -49,9 +49,9 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 }
 
 func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *actions.Action {
-	groupName, ok := action.Payload["name"].(string)
+	groupName, ok := action.Payload["group_name"].(string)
 	if !ok {
-		failure := actions.GroupCreateFailure([]string{"name not in payload"})
+		failure := actions.GroupCreateFailure([]string{"group_name not in payload"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -89,12 +89,7 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 		return failure
 	}
 
-	success := actions.GroupCreateSuccess(
-		messageGroup.ID,
-		messageGroup.Name,
-		messageGroup.MemberIDs,
-		messageGroup.DateCreated,
-	)
+	success := actions.GroupCreateSuccess(messageGroup.ID)
 	client.WriteJSON(success)
 	return success
 }
