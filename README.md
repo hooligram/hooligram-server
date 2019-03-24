@@ -40,3 +40,7 @@
 ## Logging
 
 1. `journalctl --pager-end --unit hooligram.service`
+
+## Test
+
+1. `go test ./...`
