@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/hooligram/logger"
+	"github.com/hooligram/kifu"
 )
 
 // ContainsID .
@@ -17,7 +17,7 @@ func ContainsID(ids []int, id int) bool {
 
 // LogBody .
 func LogBody(filePath string, text string) {
-	logger.Body(
+	kifu.Body(
 		[]string{filePath},
 		text,
 	)
@@ -25,15 +25,23 @@ func LogBody(filePath string, text string) {
 
 // LogClose .
 func LogClose(sessionID, clientID, actionType string, actionPayload interface{}) {
-	logger.Close(
+	kifu.Close(
 		[]string{sessionID, clientID, actionType},
 		actionPayload,
 	)
 }
 
+// LogFatal .
+func LogFatal(filePath string, text string) {
+	kifu.Fatal(
+		[]string{filePath},
+		text,
+	)
+}
+
 // LogInfo .
 func LogInfo(filePath string, text string) {
-	logger.Info(
+	kifu.Info(
 		[]string{filePath},
 		text,
 	)
@@ -41,7 +49,7 @@ func LogInfo(filePath string, text string) {
 
 // LogOpen .
 func LogOpen(sessionID, clientID, actionType string, actionPayload interface{}) {
-	logger.Open(
+	kifu.Open(
 		[]string{sessionID, clientID, actionType},
 		actionPayload,
 	)
