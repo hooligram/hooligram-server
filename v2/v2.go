@@ -6,17 +6,19 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/websocket"
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
-	"github.com/hooligram/hooligram-server/globals"
 	"github.com/hooligram/hooligram-server/utils"
 )
 
 const v2Tag = "v2"
 
+var upgrader = websocket.Upgrader{}
+
 // V2 .
 func V2(w http.ResponseWriter, r *http.Request) {
-	conn, err := globals.Upgrader.Upgrade(w, r, nil)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		utils.LogInfo(v2Tag, "error upgrading to websocket. "+err.Error())
 		return

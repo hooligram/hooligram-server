@@ -1,7 +1,6 @@
 package globals
 
 import (
-	"github.com/gorilla/websocket"
 	"github.com/hooligram/hooligram-server/db"
 )
 
@@ -12,4 +11,3 @@ type MessageDelivery struct {
 }
 
 var MessageDeliveryChan = make(chan *MessageDelivery)
-var Upgrader = websocket.Upgrader{}
