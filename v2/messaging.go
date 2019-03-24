@@ -93,7 +93,7 @@ func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Actio
 	}
 
 	recipientID := client.GetID()
-	err := db.UpdateReceiptDateDelivered(int(messageID), recipientID)
+	ok, err := db.UpdateReceiptDateDelivered(int(messageID), recipientID)
 	if err != nil {
 		utils.LogBody(v2Tag, "error updating receipt date delivered. "+err.Error())
 		failure := actions.MessagingDeliverSuccessFailure([]string{"server error"})
@@ -101,7 +101,13 @@ func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Actio
 		return failure
 	}
 
-	success := actions.MessagingDeliverSuccessSuccess()
+	if !ok {
+		failure := actions.MessagingDeliverSuccessFailure([]string{"not allowed"})
+		client.WriteJSON(failure)
+		return failure
+	}
+
+	success := actions.MessagingDeliverSuccessSuccess(int(messageID))
 	client.WriteJSON(success)
 	return success
 }

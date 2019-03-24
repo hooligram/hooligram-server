@@ -30,8 +30,14 @@ func MessagingDeliverSuccessFailure(errors []string) *Action {
 }
 
 // MessagingDeliverSuccessSuccess .
-func MessagingDeliverSuccessSuccess() *Action {
-	return constructEmptyAction(constants.MessagingDeliverSuccessSuccess)
+func MessagingDeliverSuccessSuccess(messageID int) *Action {
+	payload := make(map[string]interface{})
+	payload["message_id"] = messageID
+
+	return &Action{
+		Payload: payload,
+		Type:    constants.MessagingDeliverSuccessSuccess,
+	}
 }
 
 ///////////////////////////
