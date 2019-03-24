@@ -14,7 +14,8 @@ func MessagingDeliverRequest(message *db.Message) *Action {
 	payload := make(map[string]interface{})
 	payload["content"] = message.Content
 	payload["date_created"] = message.DateCreated
-	payload["id"] = message.ID
+	payload["message_group_id"] = message.MessageGroupID
+	payload["message_id"] = message.ID
 	payload["sender_id"] = message.SenderID
 
 	return &Action{
