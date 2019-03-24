@@ -30,9 +30,9 @@ func handleAuthorizationSignInRequest(
 		return failure
 	}
 
-	verificationCode, ok := action.Payload["code"].(string)
+	verificationCode, ok := action.Payload["verification_code"].(string)
 	if !ok {
-		failure := actions.AuthorizationSignInFailure([]string{"code not in payload"})
+		failure := actions.AuthorizationSignInFailure([]string{"verification_code not in payload"})
 		client.WriteJSON(failure)
 		return failure
 	}
