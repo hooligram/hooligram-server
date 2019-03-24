@@ -1,8 +1,6 @@
 package globals
 
 import (
-	"net/http"
-
 	"github.com/gorilla/websocket"
 	"github.com/hooligram/hooligram-server/db"
 )
@@ -13,7 +11,6 @@ type MessageDelivery struct {
 	RecipientIDs []int
 }
 
-var HttpClient = &http.Client{}
 var MessageDeliveryChan = make(chan *MessageDelivery)
 var TwilioAPIKey string
 var Upgrader = websocket.Upgrader{}
