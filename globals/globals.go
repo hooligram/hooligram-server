@@ -12,5 +12,4 @@ type MessageDelivery struct {
 }
 
 var MessageDeliveryChan = make(chan *MessageDelivery)
-var TwilioAPIKey string
 var Upgrader = websocket.Upgrader{}

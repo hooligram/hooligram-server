@@ -25,11 +25,6 @@ func main() {
 		log.Fatal(fmt.Sprintf("[%v] PORT not set. exiting...", mainTag))
 	}
 
-	globals.TwilioAPIKey = os.Getenv("TWILIO_API_KEY")
-	if globals.TwilioAPIKey == "" {
-		log.Fatal(fmt.Sprintf("[%v] TWILIO_API_KEY not set. exiting...", mainTag))
-	}
-
 	// if db == nil {
 	// 	log.Fatal(fmt.Sprintf("[%v] db not found. exiting...", mainTag))
 	// }

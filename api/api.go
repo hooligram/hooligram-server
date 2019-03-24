@@ -4,13 +4,23 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"os"
 
-	"github.com/hooligram/hooligram-server/globals"
+	"github.com/hooligram/hooligram-server/utils"
 )
 
 const apiTag = "api"
 
-var httpClient = &http.Client{}
+var (
+	httpClient   = &http.Client{}
+	twilioAPIKey = os.Getenv("TWILIO_API_KEY")
+)
+
+func init() {
+	if twilioAPIKey == "" {
+		utils.LogFatal(apiTag, "TWILIO_API_KEY not set. exiting...")
+	}
+}
 
 // GetTwilioVerificationCheck .
 func GetTwilioVerificationCheck(
@@ -28,7 +38,7 @@ func GetTwilioVerificationCheck(
 		return nil, err
 	}
 
-	req.Header.Add("X-Authy-API-Key", globals.TwilioAPIKey)
+	req.Header.Add("X-Authy-API-Key", twilioAPIKey)
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -55,7 +65,7 @@ func PostTwilioVerificationStart(countryCode, phoneNumber string) (*http.Respons
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Authy-API-Key", globals.TwilioAPIKey)
+	req.Header.Set("X-Authy-API-Key", twilioAPIKey)
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
