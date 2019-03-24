@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"flag"
 	"os"
 	"regexp"
 
@@ -18,6 +19,10 @@ var (
 )
 
 func init() {
+	if flag.Lookup("test.v") != nil {
+		return
+	}
+
 	if dbUsername == "" {
 		utils.LogFatal(dbTag, "MYSQL_USERNAME not set")
 	}
