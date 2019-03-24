@@ -88,9 +88,11 @@ func handleVerificationSubmitCodeRequest(
 	client *clients.Client,
 	action *actions.Action,
 ) *actions.Action {
-	code, ok := action.Payload["code"].(string)
+	verificationCode, ok := action.Payload["verification_code"].(string)
 	if !ok {
-		failure := actions.VerificationSubmitCodeFailure([]string{"code not in payload"})
+		failure := actions.VerificationSubmitCodeFailure(
+			[]string{"verification_code not in payload"},
+		)
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -104,7 +106,7 @@ func handleVerificationSubmitCodeRequest(
 	}
 
 	if isVerified {
-		verificationCode, err := client.GetVerificationCode()
+		storedVerificationCode, err := client.GetVerificationCode()
 		if err != nil {
 			utils.LogBody(v2Tag, "error getting client verification code. "+err.Error())
 			failure := actions.VerificationSubmitCodeFailure([]string{"server error"})
@@ -112,13 +114,15 @@ func handleVerificationSubmitCodeRequest(
 			return failure
 		}
 
-		if code == verificationCode {
+		if verificationCode == storedVerificationCode {
 			success := actions.VerificationSubmitCodeSuccess()
 			client.WriteJSON(success)
 			return success
 		}
 		{
-			failure := actions.VerificationSubmitCodeFailure([]string{"incorrect verification code"})
+			failure := actions.VerificationSubmitCodeFailure(
+				[]string{"incorrect verification code"},
+			)
 			client.WriteJSON(failure)
 			return failure
 		}
@@ -132,7 +136,11 @@ func handleVerificationSubmitCodeRequest(
 		return failure
 	}
 
-	resp, err := api.GetTwilioVerificationCheck(clientRow.CountryCode, clientRow.PhoneNumber, code)
+	resp, err := api.GetTwilioVerificationCheck(
+		clientRow.CountryCode,
+		clientRow.PhoneNumber,
+		verificationCode,
+	)
 	if err != nil {
 		utils.LogBody(v2Tag, "twilio verification check error. "+err.Error())
 		failure := actions.VerificationSubmitCodeFailure([]string{"server error"})
@@ -166,7 +174,7 @@ func handleVerificationSubmitCodeRequest(
 		return failure
 	}
 
-	err = db.UpdateClientVerificationCode(client.GetID(), code)
+	err = db.UpdateClientVerificationCode(client.GetID(), verificationCode)
 	if err != nil {
 		utils.LogBody(v2Tag, "error setting client as verified. "+err.Error())
 		failure := actions.VerificationSubmitCodeFailure([]string{"server error"})
