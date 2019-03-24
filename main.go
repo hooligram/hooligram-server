@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
-	"github.com/hooligram/hooligram-server/globals"
+	"github.com/hooligram/hooligram-server/delivery"
 	"github.com/hooligram/hooligram-server/utils"
 	"github.com/hooligram/hooligram-server/v2"
 )
@@ -39,7 +39,7 @@ func main() {
 
 func deliverMessage() {
 	for {
-		messageDelivery := <-globals.MessageDeliveryChan
+		messageDelivery := <-delivery.GetMessageDeliveryChan()
 		message := messageDelivery.Message
 		recipientIDs := messageDelivery.RecipientIDs
 

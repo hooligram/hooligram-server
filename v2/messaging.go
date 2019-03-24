@@ -4,7 +4,7 @@ import (
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
 	"github.com/hooligram/hooligram-server/db"
-	"github.com/hooligram/hooligram-server/globals"
+	"github.com/hooligram/hooligram-server/delivery"
 	"github.com/hooligram/hooligram-server/utils"
 )
 
@@ -74,7 +74,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		db.CreateReceipt(message.ID, recipientID)
 	}
 
-	globals.MessageDeliveryChan <- &globals.MessageDelivery{
+	delivery.GetMessageDeliveryChan() <- &delivery.MessageDelivery{
 		Message:      message,
 		RecipientIDs: recipientIDs,
 	}
