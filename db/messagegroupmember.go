@@ -1,7 +1,11 @@
 package db
 
-// FindAllMessageGroupMemberIDs .
-func FindAllMessageGroupMemberIDs(messageGroupID int) ([]int, error) {
+//////////
+// READ //
+//////////
+
+// ReadMessageGroupMemberIDs .
+func ReadMessageGroupMemberIDs(messageGroupID int) ([]int, error) {
 	rows, err := instance.Query(`
 		SELECT member_id
 		FROM message_group_member
@@ -22,13 +26,12 @@ func FindAllMessageGroupMemberIDs(messageGroupID int) ([]int, error) {
 	return memberIDs, nil
 }
 
-// IsClientInMessageGroup .
-func IsClientInMessageGroup(clientID, messageGroupID int) bool {
+// ReadIsClientInMessageGroup .
+func ReadIsClientInMessageGroup(clientID, messageGroupID int) bool {
 	rows, err := instance.Query(`
 		SELECT * FROM message_group_member
 		WHERE message_group_id = ? AND member_id = ?;
 	`, messageGroupID, clientID)
-
 	if err != nil {
 		return false
 	}

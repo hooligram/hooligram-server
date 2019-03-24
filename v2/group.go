@@ -29,7 +29,7 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 		return failure
 	}
 
-	if !db.IsClientInMessageGroup(client.GetID(), int(groupID)) {
+	if !db.ReadIsClientInMessageGroup(client.GetID(), int(groupID)) {
 		failure := actions.CreateGroupAddMemberFailure([]string{"not allowed"})
 		client.WriteJSON(failure)
 		return failure
@@ -114,7 +114,7 @@ func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *ac
 		return failure
 	}
 
-	if !db.IsClientInMessageGroup(client.GetID(), int(groupID)) {
+	if !db.ReadIsClientInMessageGroup(client.GetID(), int(groupID)) {
 		failure := actions.CreateGroupLeaveFailure(([]string{"not in group"}))
 		client.WriteJSON(failure)
 		return failure

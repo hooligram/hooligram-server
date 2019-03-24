@@ -13,6 +13,10 @@ type Client struct {
 	DateCreated      string
 }
 
+////////////
+// CREATE //
+////////////
+
 // CreateClient .
 func CreateClient(countryCode, phoneNumber string) (*Client, error) {
 	if countryCode != getDigits(countryCode) {
@@ -51,6 +55,10 @@ func CreateClient(countryCode, phoneNumber string) (*Client, error) {
 
 	return client, nil
 }
+
+//////////
+// READ //
+//////////
 
 // ReadClientByID .
 func ReadClientByID(id int) (*Client, error) {
@@ -131,6 +139,10 @@ func ReadClientVerificationCode(clientID int) (string, error) {
 	rows.Scan(&verificationCode)
 	return verificationCode, nil
 }
+
+////////////
+// UPDATE //
+////////////
 
 // UpdateClientVerificationCode .
 func UpdateClientVerificationCode(clientID int, verificationCode string) error {

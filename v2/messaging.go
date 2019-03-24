@@ -36,7 +36,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return failure
 	}
 
-	if !db.IsClientInMessageGroup(int(senderID), int(messageGroupID)) {
+	if !db.ReadIsClientInMessageGroup(int(senderID), int(messageGroupID)) {
 		failure := actions.CreateMessagingSendFailure(
 			[]string{"sender doesn't belong to message group"},
 		)
@@ -52,7 +52,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return failure
 	}
 
-	messageGroupMemberIDs, err := db.FindAllMessageGroupMemberIDs(message.MessageGroupID)
+	messageGroupMemberIDs, err := db.ReadMessageGroupMemberIDs(message.MessageGroupID)
 	if err != nil {
 		utils.LogBody(v2Tag, "error finding meesage group member ids. "+err.Error())
 		failure := actions.CreateMessagingSendFailure([]string{"server error"})
