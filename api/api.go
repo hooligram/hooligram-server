@@ -18,7 +18,7 @@ var (
 
 func init() {
 	if twilioAPIKey == "" {
-		utils.LogFatal(apiTag, "TWILIO_API_KEY not set. exiting...")
+		utils.LogFatal(apiTag, "TWILIO_API_KEY not set")
 	}
 }
 

@@ -18,16 +18,10 @@ import (
 const mainTag = "main"
 
 func main() {
-	// defer db.Close()
-
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Fatal(fmt.Sprintf("[%v] PORT not set. exiting...", mainTag))
+		log.Fatal(fmt.Sprintf("[%v] PORT not set", mainTag))
 	}
-
-	// if db == nil {
-	// 	log.Fatal(fmt.Sprintf("[%v] db not found. exiting...", mainTag))
-	// }
 
 	router := mux.NewRouter()
 	router.HandleFunc("/v2", v2.V2)

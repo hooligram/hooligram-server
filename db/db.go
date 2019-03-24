@@ -4,39 +4,41 @@ import (
 	"database/sql"
 	"os"
 	"regexp"
+
+	"github.com/hooligram/hooligram-server/utils"
 )
 
 const dbTag = "db"
 
-var instance *sql.DB
+var (
+	dbName     = os.Getenv("MYSQL_DB_NAME")
+	dbPassword = os.Getenv("MYSQL_PASSWORD")
+	dbUsername = os.Getenv("MYSQL_USERNAME")
+	instance   *sql.DB
+)
 
 func init() {
-	dbUsername := os.Getenv("MYSQL_USERNAME")
 	if dbUsername == "" {
-		// utils.LogInfo(dbTag, "MYSQL_USERNAME not set")
+		utils.LogFatal(dbTag, "MYSQL_USERNAME not set")
 	}
 
-	dbPassword := os.Getenv("MYSQL_PASSWORD")
 	if dbPassword == "" {
-		// utils.LogInfo(dbTag, "MYSQL_PASSWORD not set")
+		utils.LogFatal(dbTag, "MYSQL_PASSWORD not set")
 	}
 
-	dbName := os.Getenv("MYSQL_DB_NAME")
 	if dbName == "" {
-		// utils.LogInfo(dbTag, "MYSQL_DB_NAME not set")
+		utils.LogFatal(dbTag, "MYSQL_DB_NAME not set")
 	}
 
 	var err error
 	instance, err = sql.Open("mysql", dbUsername+":"+dbPassword+"@/"+dbName)
 	if err != nil {
-		// utils.LogInfo(dbTag, "mysql connection setup error. "+err.Error())
-		return
+		utils.LogFatal(dbTag, "error opening mysql connection. "+err.Error())
 	}
 
 	err = instance.Ping()
 	if err != nil {
-		// utils.LogInfo(dbTag, "mysql connection error. "+err.Error())
-		return
+		utils.LogFatal(dbTag, "error pinging mysql. "+err.Error())
 	}
 
 	instance.Exec("SET GLOBAL time_zone = '+00:00';")
