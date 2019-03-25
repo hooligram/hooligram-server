@@ -5,9 +5,9 @@ import (
 	"github.com/hooligram/hooligram-server/db"
 )
 
-//////////////////////////////
-// CREATE_MESSAGING_DELIVER //
-//////////////////////////////
+///////////////////////
+// MESSAGING_DELIVER //
+///////////////////////
 
 // MessagingDeliverRequest .
 func MessagingDeliverRequest(message *db.Message) *Action {
@@ -40,9 +40,9 @@ func MessagingDeliverSuccessSuccess(messageID int) *Action {
 	}
 }
 
-///////////////////////////
-// CREATE_MESSAGING_SEND //
-///////////////////////////
+////////////////////
+// MESSAGING_SEND //
+////////////////////
 
 // MessagingSendFailure .
 func MessagingSendFailure(errors []string) *Action {
