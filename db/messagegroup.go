@@ -1,14 +1,34 @@
 package db
 
-import "errors"
+import (
+	"errors"
+)
 
 // MessageGroup .
 type MessageGroup struct {
-	ID          int64
+	ID          int
 	Name        string
 	DateCreated string
+}
 
-	MemberIDs []int
+// MemberIDs .
+func (messageGroup *MessageGroup) MemberIDs() ([]int, error) {
+	rows, err := instance.Query(`
+		SELECT member_id FROM message_group_member WHERE message_group_id = ?;
+	`, messageGroup.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	memberIDs := []int{}
+
+	for rows.Next() {
+		var memberID int
+		rows.Scan(&memberID)
+		memberIDs = append(memberIDs, memberID)
+	}
+
+	return memberIDs, nil
 }
 
 ////////////
@@ -83,11 +103,9 @@ func CreateMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error
 	rows.Scan(&dateCreated)
 
 	messageGroup := &MessageGroup{
-		ID:          groupID,
+		ID:          int(groupID),
 		Name:        groupName,
 		DateCreated: dateCreated,
-
-		MemberIDs: memberIDs,
 	}
 
 	return messageGroup, nil
@@ -126,6 +144,32 @@ func CreateMessageGroupMembers(messageGroupID int, memberIDs []int) error {
 //////////
 // READ //
 //////////
+
+// ReadMessageGroupByID .
+func ReadMessageGroupByID(id int) (*MessageGroup, error) {
+	rows, err := instance.Query(`
+		SELECT id, name, date_created FROM message_group WHERE id = ?;
+	`, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rows.Next() {
+		return nil, nil
+	}
+
+	var name string
+	var dateCreated string
+	rows.Scan(&id, &name, &dateCreated)
+
+	messageGroup := MessageGroup{
+		ID:          id,
+		Name:        name,
+		DateCreated: dateCreated,
+	}
+
+	return &messageGroup, nil
+}
 
 ////////////
 // UPDATE //

@@ -72,6 +72,16 @@ func handleAuthorizationSignInRequest(
 		utils.LogBody(v2Tag, "error finding messages to deliver. "+err.Error())
 	}
 
+	messageGroupIDs, err := db.ReadClientMessageGroupIDs(client.GetID())
+	if err != nil {
+		utils.LogBody(v2Tag, "error reading client message group ids. "+err.Error())
+	}
+
+	for _, messageGroupID := range messageGroupIDs {
+		request := actions.GroupDeliverRequest(messageGroupID)
+		client.WriteJSON(request)
+	}
+
 	for _, undeliveredMessage := range undeliveredMessages {
 		action := actions.MessagingDeliverRequest(undeliveredMessage)
 		client.WriteJSON(action)

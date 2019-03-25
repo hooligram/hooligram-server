@@ -54,7 +54,7 @@ func DeliverMessageGroup() {
 				continue
 			}
 
-			action := actions.GroupDeliverRequest(messageGroup)
+			action := actions.GroupDeliverRequest(messageGroup.ID)
 			client.WriteJSON(action)
 		}
 	}

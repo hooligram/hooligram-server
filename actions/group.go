@@ -3,6 +3,7 @@ package actions
 import (
 	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
+	"github.com/hooligram/hooligram-server/utils"
 )
 
 //////////////////////
@@ -29,7 +30,7 @@ func GroupCreateFailure(errors []string) *Action {
 }
 
 // GroupCreateSuccess .
-func GroupCreateSuccess(groupID int64) *Action {
+func GroupCreateSuccess(groupID int) *Action {
 	payload := make(map[string]interface{})
 	payload["message_group_id"] = groupID
 
@@ -44,11 +45,23 @@ func GroupCreateSuccess(groupID int64) *Action {
 ///////////////////
 
 // GroupDeliverRequest .
-func GroupDeliverRequest(messageGroup *db.MessageGroup) *Action {
+func GroupDeliverRequest(messageGroupID int) *Action {
+	messageGroup, err := db.ReadMessageGroupByID(messageGroupID)
+	if err != nil {
+		utils.LogInfo(actionsTag, "error reading message group by id. "+err.Error())
+		return &Action{}
+	}
+
+	memberIDs, err := messageGroup.MemberIDs()
+	if err != nil {
+		utils.LogInfo(actionsTag, "error getting message group member ids. "+err.Error())
+		return &Action{}
+	}
+
 	payload := make(map[string]interface{})
 	payload["date_created"] = messageGroup.DateCreated
 	payload["group_name"] = messageGroup.Name
-	payload["member_ids"] = messageGroup.MemberIDs
+	payload["member_ids"] = memberIDs
 	payload["message_group_id"] = messageGroup.ID
 
 	return &Action{
