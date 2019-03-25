@@ -1,6 +1,9 @@
 package actions
 
-import "github.com/hooligram/hooligram-server/constants"
+import (
+	"github.com/hooligram/hooligram-server/constants"
+	"github.com/hooligram/hooligram-server/db"
+)
 
 //////////////////////
 // GROUP_ADD_MEMBER //
@@ -33,6 +36,23 @@ func GroupCreateSuccess(groupID int64) *Action {
 	return &Action{
 		Payload: payload,
 		Type:    constants.GroupCreateSuccess,
+	}
+}
+
+///////////////////
+// GROUP_DELIVER //
+///////////////////
+
+// GroupDeliverRequest .
+func GroupDeliverRequest(messageGroup *db.MessageGroup) *Action {
+	payload := make(map[string]interface{})
+	payload["date_created"] = messageGroup.DateCreated
+	payload["group_name"] = messageGroup.Name
+	payload["message_group_id"] = messageGroup.ID
+
+	return &Action{
+		Payload: payload,
+		Type:    constants.GroupDeliverRequest,
 	}
 }
 

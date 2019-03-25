@@ -14,6 +14,12 @@ const (
 	GroupCreateRequest = "GROUP_CREATE_REQUEST"
 	GroupCreateSuccess = "GROUP_CREATE_SUCCESS"
 
+	GroupDeliverFailure        = "GROUP_DELIVER_FAILURE"
+	GroupDeliverRequest        = "GROUP_DELIVER_REQUEST"
+	GroupDeliverSuccess        = "GROUP_DELIVER_SUCCESS"
+	GroupDeliverSuccessFailure = "GROUP_DELIVER_SUCCESS_FAILURE"
+	GroupDeliverSuccessSuccess = "GROUP_DELIVER_SUCCESS_SUCCESS"
+
 	GroupLeaveFailure = "GROUP_LEAVE_FAILURE"
 	GroupLeaveRequest = "GROUP_LEAVE_REQUEST"
 	GroupLeaveSuccess = "GROUP_LEAVE_SUCCESS"

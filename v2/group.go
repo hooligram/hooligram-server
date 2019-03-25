@@ -4,6 +4,7 @@ import (
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
 	"github.com/hooligram/hooligram-server/db"
+	"github.com/hooligram/hooligram-server/delivery"
 	"github.com/hooligram/hooligram-server/utils"
 )
 
@@ -87,6 +88,21 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 		failure := actions.GroupCreateFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
+	}
+
+	recipientIDs := []int{}
+
+	for _, memberID := range memberIDs {
+		if memberID == client.GetID() {
+			continue
+		}
+
+		recipientIDs = append(recipientIDs, memberID)
+	}
+
+	delivery.GetMessageGroupDeliveryChan() <- &delivery.MessageGroupDelivery{
+		MessageGroup: messageGroup,
+		RecipientIDs: recipientIDs,
 	}
 
 	success := actions.GroupCreateSuccess(messageGroup.ID)

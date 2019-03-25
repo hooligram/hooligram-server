@@ -24,6 +24,7 @@ func main() {
 	router.HandleFunc("/v2", v2.V2)
 
 	go delivery.DeliverMessage()
+	go delivery.DeliverMessageGroup()
 
 	http.ListenAndServe(":"+port, router)
 }
