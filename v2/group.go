@@ -184,6 +184,38 @@ func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *ac
 		return failure
 	}
 
+	memberIDs, err := db.ReadMessageGroupMemberIDs(int(groupID))
+	if err != nil {
+		utils.LogBody(v2Tag, "error reading message group member ids. "+err.Error())
+		failure := actions.GroupLeaveFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
+	}
+
+	recipientIDs := []int{}
+
+	for _, memberID := range memberIDs {
+		if memberID == client.GetID() {
+			continue
+		}
+
+		recipientIDs = append(recipientIDs, memberID)
+	}
+
+	messageGroup, err := db.ReadMessageGroupByID(int(groupID))
+	if err != nil {
+		utils.LogBody(v2Tag, "error reading message group. "+err.Error())
+		failure := actions.GroupLeaveFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
+	}
+
+	messageGroupDelivery := delivery.MessageGroupDelivery{
+		MessageGroup: messageGroup,
+		RecipientIDs: recipientIDs,
+	}
+	delivery.GetMessageGroupDeliveryChan() <- &messageGroupDelivery
+
 	success := actions.GroupLeaveSuccess()
 	client.WriteJSON(success)
 	return success
