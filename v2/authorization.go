@@ -67,7 +67,7 @@ func handleAuthorizationSignInRequest(
 	success := actions.AuthorizationSignInSuccess()
 	client.WriteJSON(success)
 
-	undeliveredMessages, err := db.FindUndeliveredMessages(client.GetID())
+	undeliveredMessages, err := db.ReadUndeliveredMessages(client.GetID())
 	if err != nil {
 		utils.LogBody(v2Tag, "error finding messages to deliver. "+err.Error())
 	}

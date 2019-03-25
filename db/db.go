@@ -118,8 +118,8 @@ func init() {
 	`)
 }
 
-// FindUndeliveredMessages .
-func FindUndeliveredMessages(recipientID int) ([]*Message, error) {
+// ReadUndeliveredMessages .
+func ReadUndeliveredMessages(recipientID int) ([]*Message, error) {
 	rows, err := instance.Query(`
 		SELECT message.*
 		FROM receipt JOIN message ON receipt.message_id = message.id
