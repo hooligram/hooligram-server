@@ -23,7 +23,7 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 		return failure
 	}
 
-	memberID, ok := action.Payload["member_id"].(float64)
+	newMemberID, ok := action.Payload["member_id"].(float64)
 	if !ok {
 		failure := actions.GroupAddMemberFailure([]string{"member_id not in payload"})
 		client.WriteJSON(failure)
@@ -36,13 +36,45 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 		return failure
 	}
 
-	err := db.CreateMessageGroupMembers(int(groupID), []int{int(memberID)})
+	err := db.CreateMessageGroupMembers(int(groupID), []int{int(newMemberID)})
 	if err != nil {
 		utils.LogBody(v2Tag, "error adding new message group member. "+err.Error())
 		failure := actions.GroupAddMemberFailure([]string{"server error"})
 		client.WriteJSON(failure)
 		return failure
 	}
+
+	memberIDs, err := db.ReadMessageGroupMemberIDs(int(groupID))
+	if err != nil {
+		utils.LogBody(v2Tag, "error reading message group member ids. "+err.Error())
+		failure := actions.GroupAddMemberFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
+	}
+
+	recipientIDs := []int{}
+
+	for _, memberID := range memberIDs {
+		if memberID == client.GetID() {
+			continue
+		}
+
+		recipientIDs = append(recipientIDs, memberID)
+	}
+
+	messageGroup, err := db.ReadMessageGroupByID(int(groupID))
+	if err != nil {
+		utils.LogBody(v2Tag, "error reading message group. "+err.Error())
+		failure := actions.GroupAddMemberFailure([]string{"server error"})
+		client.WriteJSON(failure)
+		return failure
+	}
+
+	messageGroupDelivery := delivery.MessageGroupDelivery{
+		MessageGroup: messageGroup,
+		RecipientIDs: recipientIDs,
+	}
+	delivery.GetMessageGroupDeliveryChan() <- &messageGroupDelivery
 
 	success := actions.GroupAddMemberSuccess()
 	client.WriteJSON(success)
