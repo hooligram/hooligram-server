@@ -118,8 +118,32 @@ func init() {
 	`)
 }
 
-// FindUndeliveredMessages .
-func FindUndeliveredMessages(recipientID int) ([]*Message, error) {
+// ReadClientMessageGroupIDs .
+func ReadClientMessageGroupIDs(clientID int) ([]int, error) {
+	rows, err := instance.Query(`
+		SELECT message_group.id
+		FROM message_group_member
+			JOIN message_group
+			ON message_group_member.message_group_id = message_group.id
+		WHERE message_group_member.member_id = ?;
+	`, clientID)
+	if err != nil {
+		return nil, err
+	}
+
+	groupIDs := []int{}
+
+	for rows.Next() {
+		var groupID int
+		rows.Scan(&groupID)
+		groupIDs = append(groupIDs, groupID)
+	}
+
+	return groupIDs, nil
+}
+
+// ReadUndeliveredMessages .
+func ReadUndeliveredMessages(recipientID int) ([]*Message, error) {
 	rows, err := instance.Query(`
 		SELECT message.*
 		FROM receipt JOIN message ON receipt.message_id = message.id

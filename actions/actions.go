@@ -1,5 +1,7 @@
 package actions
 
+const actionsTag = "actions"
+
 // Action .
 type Action struct {
 	Payload map[string]interface{} `json:"payload"`

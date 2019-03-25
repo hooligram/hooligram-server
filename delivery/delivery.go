@@ -13,7 +13,16 @@ type MessageDelivery struct {
 	RecipientIDs []int
 }
 
-var messageDeliveryChan = make(chan *MessageDelivery)
+// MessageGroupDelivery .
+type MessageGroupDelivery struct {
+	MessageGroup *db.MessageGroup
+	RecipientIDs []int
+}
+
+var (
+	messageDeliveryChan      = make(chan *MessageDelivery)
+	messageGroupDeliveryChan = make(chan *MessageGroupDelivery)
+)
 
 // DeliverMessage .
 func DeliverMessage() {
@@ -33,7 +42,30 @@ func DeliverMessage() {
 	}
 }
 
+// DeliverMessageGroup .
+func DeliverMessageGroup() {
+	for {
+		messageGroupDelivery := <-GetMessageGroupDeliveryChan()
+		messageGroup := messageGroupDelivery.MessageGroup
+		recipientIDs := messageGroupDelivery.RecipientIDs
+
+		for _, client := range clients.GetSignedInClients() {
+			if !utils.ContainsID(recipientIDs, client.GetID()) {
+				continue
+			}
+
+			action := actions.GroupDeliverRequest(messageGroup.ID)
+			client.WriteJSON(action)
+		}
+	}
+}
+
 // GetMessageDeliveryChan .
 func GetMessageDeliveryChan() chan *MessageDelivery {
 	return messageDeliveryChan
+}
+
+// GetMessageGroupDeliveryChan .
+func GetMessageGroupDeliveryChan() chan *MessageGroupDelivery {
+	return messageGroupDeliveryChan
 }
