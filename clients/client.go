@@ -1,6 +1,8 @@
 package clients
 
 import (
+	"sync"
+
 	"github.com/gorilla/websocket"
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/db"
@@ -13,6 +15,7 @@ type Client struct {
 
 	id         int
 	isSignedIn bool
+	lock       sync.Mutex
 }
 
 // GetID .
@@ -116,5 +119,7 @@ func (client *Client) WriteFailure(actionType string, errors []string) {
 
 // WriteJSON .
 func (client *Client) WriteJSON(action *actions.Action) error {
+	client.lock.Lock()
+	defer client.lock.Unlock()
 	return client.Conn.WriteJSON(*action)
 }
