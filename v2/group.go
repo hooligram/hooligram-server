@@ -18,14 +18,14 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 
 	groupID, ok := action.Payload["group_id"].(float64)
 	if !ok {
-		failure := actions.GroupAddMemberFailure([]string{"group_id is missing"})
+		failure := actions.GroupAddMemberFailure([]string{"group_id not in payload"})
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	memberID, ok := action.Payload["member_id"].(float64)
 	if !ok {
-		failure := actions.GroupAddMemberFailure([]string{"member_id is missing"})
+		failure := actions.GroupAddMemberFailure([]string{"member_id not in payload"})
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -110,6 +110,19 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 	return success
 }
 
+func handleGroupDeliverSuccess(client *clients.Client, action *actions.Action) *actions.Action {
+	_, ok := action.Payload["message_group_id"].(float64)
+	if !ok {
+		failure := actions.GroupDeliverSuccessFailure([]string{"message_group_id not in payload"})
+		client.WriteJSON(failure)
+		return failure
+	}
+
+	success := actions.GroupDeliverSuccessSuccess()
+	client.WriteJSON(success)
+	return success
+}
+
 func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *actions.Action {
 	if !client.IsSignedIn() {
 		utils.LogBody(v2Tag, "client not signed in")
@@ -120,7 +133,7 @@ func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *ac
 
 	groupID, ok := action.Payload["group_id"].(float64)
 	if !ok {
-		failure := actions.GroupLeaveFailure(([]string{"group_id is missing"}))
+		failure := actions.GroupLeaveFailure(([]string{"group_id not in payload"}))
 		client.WriteJSON(failure)
 		return failure
 	}

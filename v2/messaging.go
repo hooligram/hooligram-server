@@ -87,7 +87,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Action) *actions.Action {
 	messageID, ok := action.Payload["message_id"].(float64)
 	if !ok {
-		failure := actions.MessagingDeliverSuccessFailure([]string{"message_id is missing"})
+		failure := actions.MessagingDeliverSuccessFailure([]string{"message_id not in payload"})
 		client.WriteJSON(failure)
 		return failure
 	}
