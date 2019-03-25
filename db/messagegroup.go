@@ -39,7 +39,6 @@ func (messageGroup *MessageGroup) MemberIDs() ([]int, error) {
 func CreateMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error) {
 	tx, err := instance.Begin()
 	if err != nil {
-		// utils.LogInfo(dbTag, "transaction error. "+err.Error())
 		return nil, err
 	}
 
@@ -49,14 +48,12 @@ func CreateMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error
 	)
 	if err != nil {
 		tx.Rollback()
-		// utils.LogInfo(dbTag, "error creating message group. "+err.Error())
 		return nil, err
 	}
 
 	groupID, err := result.LastInsertId()
 	if err != nil {
 		tx.Rollback()
-		// utils.LogInfo(dbTag, "error creating message group. "+err.Error())
 		return nil, err
 	}
 
@@ -69,17 +66,12 @@ func CreateMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error
 		)
 		if err != nil {
 			tx.Rollback()
-			// utils.LogInfo(
-			// 	dbTag,
-			// 	fmt.Sprintf("failed to create message group %v in instance. %v", groupName, err.Error()),
-			// )
 			return nil, err
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		// utils.LogInfo(dbTag, "error committing transaction. "+err.Error())
 		return nil, err
 	}
 
@@ -88,14 +80,12 @@ func CreateMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error
 		groupID,
 	)
 	if err != nil {
-		// utils.LogInfo(dbTag, "error retrieving message group. "+err.Error())
 		return nil, err
 	}
 
 	if !rows.Next() {
 		errorMsg := "message_group `%v` has been added to the database but "
 		errorMsg += "an error occured when querying it"
-		// utils.LogInfo(dbTag, fmt.Sprintf(errorMsg, groupName))
 		return nil, errors.New(errorMsg)
 	}
 
