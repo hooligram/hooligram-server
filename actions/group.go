@@ -48,6 +48,7 @@ func GroupDeliverRequest(messageGroup *db.MessageGroup) *Action {
 	payload := make(map[string]interface{})
 	payload["date_created"] = messageGroup.DateCreated
 	payload["group_name"] = messageGroup.Name
+	payload["member_ids"] = messageGroup.MemberIDs
 	payload["message_group_id"] = messageGroup.ID
 
 	return &Action{
