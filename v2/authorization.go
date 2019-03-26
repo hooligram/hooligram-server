@@ -11,11 +11,19 @@ func handleAuthorizationSignInRequest(
 	client *clients.Client,
 	action *actions.Action,
 ) *actions.Action {
+	requestID := action.ID
+	if requestID == "" {
+		failure := actions.AuthorizationSignInFailure([]string{"id not in action"})
+		client.WriteJSON(failure)
+		return failure
+	}
+
 	countryCode, ok := action.Payload["country_code"].(string)
 	if !ok {
 		failure := actions.AuthorizationSignInFailure(
 			[]string{"country_code not in payload"},
 		)
+		failure.ID = requestID
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -25,6 +33,7 @@ func handleAuthorizationSignInRequest(
 		failure := actions.AuthorizationSignInFailure(
 			[]string{"phone_number not in payload"},
 		)
+		failure.ID = requestID
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -32,6 +41,7 @@ func handleAuthorizationSignInRequest(
 	verificationCode, ok := action.Payload["verification_code"].(string)
 	if !ok {
 		failure := actions.AuthorizationSignInFailure([]string{"verification_code not in payload"})
+		failure.ID = requestID
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -40,12 +50,14 @@ func handleAuthorizationSignInRequest(
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading client by unique key. "+err.Error())
 		failure := actions.AuthorizationSignInFailure([]string{"server error"})
+		failure.ID = requestID
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if clientRow == nil || clientRow.VerificationCode != verificationCode {
 		failure := actions.AuthorizationSignInFailure([]string{"not verified"})
+		failure.ID = requestID
 		client.WriteJSON(failure)
 		return failure
 	}
@@ -54,17 +66,20 @@ func handleAuthorizationSignInRequest(
 	if err != nil {
 		utils.LogBody(v2Tag, "error signing in client. "+err.Error())
 		failure := actions.AuthorizationSignInFailure([]string{"server error"})
+		failure.ID = requestID
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	if !ok {
 		failure := actions.AuthorizationSignInFailure([]string{"wrong credentials"})
+		failure.ID = requestID
 		client.WriteJSON(failure)
 		return failure
 	}
 
 	success := actions.AuthorizationSignInSuccess()
+	success.ID = requestID
 	client.WriteJSON(success)
 
 	undeliveredMessages, err := db.ReadUndeliveredMessages(client.GetID())
@@ -79,12 +94,14 @@ func handleAuthorizationSignInRequest(
 
 	for _, messageGroupID := range messageGroupIDs {
 		request := actions.GroupDeliverRequest(messageGroupID)
+		request.ID = generateRandomActionID()
 		client.WriteJSON(request)
 	}
 
 	for _, undeliveredMessage := range undeliveredMessages {
-		action := actions.MessagingDeliverRequest(undeliveredMessage)
-		client.WriteJSON(action)
+		request := actions.MessagingDeliverRequest(undeliveredMessage)
+		request.ID = generateRandomActionID()
+		client.WriteJSON(request)
 	}
 
 	return success

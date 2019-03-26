@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"math/rand"
+
 	"github.com/hooligram/kifu"
 )
 
@@ -13,6 +15,22 @@ func ContainsID(ids []int, id int) bool {
 	}
 
 	return false
+}
+
+// GenerateRandomString .
+func GenerateRandomString(stringLength int) string {
+	if stringLength < 1 {
+		return ""
+	}
+
+	var runes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	randomRunes := make([]rune, stringLength)
+
+	for i := range randomRunes {
+		randomRunes[i] = runes[rand.Intn(len(runes))]
+	}
+
+	return string(randomRunes)
 }
 
 // LogBody .
