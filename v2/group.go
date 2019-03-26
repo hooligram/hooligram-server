@@ -72,7 +72,7 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 	delivery.GetMessageGroupDeliveryChan() <- &messageGroupDelivery
 
 	success := actions.GroupAddMemberSuccess()
-	success.ID = generateRandomActionID()
+	success.ID = requestID
 	client.WriteJSON(success)
 	return success
 }
@@ -133,7 +133,7 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 	}
 
 	success := actions.GroupCreateSuccess(messageGroup.ID)
-	success.ID = generateRandomActionID()
+	success.ID = requestID
 	client.WriteJSON(success)
 	return success
 }
@@ -154,7 +154,7 @@ func handleGroupDeliverSuccess(client *clients.Client, action *actions.Action) *
 	}
 
 	success := actions.GroupDeliverSuccessSuccess()
-	success.ID = generateRandomActionID()
+	success.ID = requestID
 	client.WriteJSON(success)
 	return success
 }
@@ -218,7 +218,7 @@ func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *ac
 	delivery.GetMessageGroupDeliveryChan() <- &messageGroupDelivery
 
 	success := actions.GroupLeaveSuccess()
-	success.ID = generateRandomActionID()
+	success.ID = requestID
 	client.WriteJSON(success)
 	return success
 }

@@ -69,7 +69,7 @@ func handleVerificationRequestCodeRequest(
 	}
 
 	success := actions.VerificationRequestCodeSuccess()
-	success.ID = generateRandomActionID()
+	success.ID = requestID
 	client.WriteJSON(success)
 	return success
 }
@@ -107,7 +107,7 @@ func handleVerificationSubmitCodeRequest(
 
 		if verificationCode == storedVerificationCode {
 			success := actions.VerificationSubmitCodeSuccess()
-			success.ID = generateRandomActionID()
+			success.ID = requestID
 			client.WriteJSON(success)
 			return success
 		}
@@ -157,7 +157,7 @@ func handleVerificationSubmitCodeRequest(
 	}
 
 	success := actions.VerificationSubmitCodeSuccess()
-	success.ID = generateRandomActionID()
+	success.ID = requestID
 	client.WriteJSON(success)
 	return success
 }
