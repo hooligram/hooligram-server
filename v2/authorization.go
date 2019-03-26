@@ -7,75 +7,52 @@ import (
 	"github.com/hooligram/hooligram-server/utils"
 )
 
+////////////////////////////////////////////
+// HANDLER: AUTHORIZATION_SIGN_IN_REQUEST //
+////////////////////////////////////////////
+
 func handleAuthorizationSignInRequest(
 	client *clients.Client,
 	action *actions.Action,
 ) *actions.Action {
 	requestID := action.ID
 	if requestID == "" {
-		failure := actions.AuthorizationSignInFailure([]string{"id not in action"})
-		client.WriteJSON(failure)
-		return failure
+		return authorizationSignInFailure(client, requestID, "id not in action")
 	}
 
 	countryCode, ok := action.Payload["country_code"].(string)
 	if !ok {
-		failure := actions.AuthorizationSignInFailure(
-			[]string{"country_code not in payload"},
-		)
-		failure.ID = requestID
-		client.WriteJSON(failure)
-		return failure
+		return authorizationSignInFailure(client, requestID, "country_code not in payload")
 	}
 
 	phoneNumber, ok := action.Payload["phone_number"].(string)
 	if !ok {
-		failure := actions.AuthorizationSignInFailure(
-			[]string{"phone_number not in payload"},
-		)
-		failure.ID = requestID
-		client.WriteJSON(failure)
-		return failure
+		return authorizationSignInFailure(client, requestID, "phone_number not in payload")
 	}
 
 	verificationCode, ok := action.Payload["verification_code"].(string)
 	if !ok {
-		failure := actions.AuthorizationSignInFailure([]string{"verification_code not in payload"})
-		failure.ID = requestID
-		client.WriteJSON(failure)
-		return failure
+		return authorizationSignInFailure(client, requestID, "verification_code not in payload")
 	}
 
 	clientRow, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading client by unique key. "+err.Error())
-		failure := actions.AuthorizationSignInFailure([]string{"server error"})
-		failure.ID = requestID
-		client.WriteJSON(failure)
-		return failure
+		return authorizationSignInFailure(client, requestID, "server error")
 	}
 
 	if clientRow == nil || clientRow.VerificationCode != verificationCode {
-		failure := actions.AuthorizationSignInFailure([]string{"not verified"})
-		failure.ID = requestID
-		client.WriteJSON(failure)
-		return failure
+		return authorizationSignInFailure(client, requestID, "not verified")
 	}
 
 	ok, err = client.SignIn(countryCode, phoneNumber, verificationCode)
 	if err != nil {
 		utils.LogBody(v2Tag, "error signing in client. "+err.Error())
-		failure := actions.AuthorizationSignInFailure([]string{"server error"})
-		failure.ID = requestID
-		client.WriteJSON(failure)
-		return failure
+		return authorizationSignInFailure(client, requestID, "server error")
 	}
 
 	if !ok {
-		failure := actions.AuthorizationSignInFailure([]string{"wrong credentials"})
-		failure.ID = requestID
-		client.WriteJSON(failure)
-		return failure
+		return authorizationSignInFailure(client, requestID, "wrong credentials")
 	}
 
 	success := actions.AuthorizationSignInSuccess()
@@ -105,4 +82,15 @@ func handleAuthorizationSignInRequest(
 	}
 
 	return success
+}
+
+////////////
+// HELPER //
+////////////
+
+func authorizationSignInFailure(client *clients.Client, actionID, err string) *actions.Action {
+	failure := actions.AuthorizationSignInFailure([]string{err})
+	failure.ID = actionID
+	client.WriteJSON(failure)
+	return failure
 }
