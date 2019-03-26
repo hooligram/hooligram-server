@@ -2,6 +2,7 @@ package clients
 
 import (
 	"github.com/gorilla/websocket"
+	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/utils"
 )
 
@@ -55,5 +56,5 @@ func Remove(conn *websocket.Conn) error {
 }
 
 func generateSessionID() string {
-	return utils.GenerateRandomString(8)
+	return utils.GenerateRandomString(constants.ActionIDLength)
 }

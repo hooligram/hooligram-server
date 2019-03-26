@@ -106,5 +106,5 @@ func V2(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateRandomActionID() string {
-	return utils.GenerateRandomString(8)
+	return utils.GenerateRandomString(constants.ActionIDLength)
 }

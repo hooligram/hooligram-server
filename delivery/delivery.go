@@ -3,6 +3,7 @@ package delivery
 import (
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
+	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
 	"github.com/hooligram/hooligram-server/utils"
 )
@@ -37,6 +38,7 @@ func DeliverMessage() {
 			}
 
 			action := actions.MessagingDeliverRequest(message)
+			action.ID = utils.GenerateRandomString(constants.ActionIDLength)
 			client.WriteJSON(action)
 		}
 	}
@@ -55,6 +57,7 @@ func DeliverMessageGroup() {
 			}
 
 			action := actions.GroupDeliverRequest(messageGroup.ID)
+			action.ID = utils.GenerateRandomString(constants.ActionIDLength)
 			client.WriteJSON(action)
 		}
 	}
