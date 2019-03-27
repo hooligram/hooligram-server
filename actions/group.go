@@ -52,16 +52,16 @@ func GroupDeliverRequest(messageGroupID int) *Action {
 		return &Action{}
 	}
 
-	memberIDs, err := messageGroup.MemberIDs()
+	memberSIDs, err := messageGroup.MemberSIDs()
 	if err != nil {
-		utils.LogInfo(actionsTag, "error getting message group member ids. "+err.Error())
+		utils.LogInfo(actionsTag, "error getting message group member sids. "+err.Error())
 		return &Action{}
 	}
 
 	payload := make(map[string]interface{})
 	payload["date_created"] = messageGroup.DateCreated
 	payload["group_name"] = messageGroup.Name
-	payload["member_ids"] = memberIDs
+	payload["member_sids"] = memberSIDs
 	payload["message_group_id"] = messageGroup.ID
 
 	return &Action{
