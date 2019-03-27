@@ -27,16 +27,26 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 		return groupAddMemberFailure(client, requestID, "group_id not in payload")
 	}
 
-	newMemberID, ok := action.Payload["member_id"].(float64)
+	newMemberSID, ok := action.Payload["member_sid"].(string)
 	if !ok {
-		return groupAddMemberFailure(client, requestID, "member_id not in payload")
+		return groupAddMemberFailure(client, requestID, "member_sid not in payload")
 	}
 
 	if !db.ReadIsClientInMessageGroup(client.GetID(), int(groupID)) {
 		return groupAddMemberFailure(client, requestID, "not allowed")
 	}
 
-	err := db.CreateMessageGroupMembers(int(groupID), []int{int(newMemberID)})
+	newMemberRow, err := db.ReadClientByUniqueKey(utils.ParseSID(newMemberSID))
+	if err != nil {
+		utils.LogBody(v2Tag, "error reading new member by unique key. "+err.Error())
+		return groupAddMemberFailure(client, requestID, "server error")
+	}
+
+	if newMemberRow == nil {
+		return groupAddMemberFailure(client, requestID, "new member not found")
+	}
+
+	err = db.CreateMessageGroupMembers(int(groupID), []int{int(newMemberRow.ID)})
 	if err != nil {
 		utils.LogBody(v2Tag, "error adding new message group member. "+err.Error())
 		return groupAddMemberFailure(client, requestID, "server error")
@@ -49,7 +59,6 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 	}
 
 	recipientIDs := []int{}
-
 	for _, memberID := range memberIDs {
 		if memberID == client.GetID() {
 			continue
