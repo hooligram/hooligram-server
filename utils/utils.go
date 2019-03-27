@@ -2,14 +2,26 @@ package utils
 
 import (
 	"math/rand"
+	"strings"
 
 	"github.com/hooligram/kifu"
 )
 
-// ContainsID .
-func ContainsID(ids []int, id int) bool {
-	for _, i := range ids {
-		if i == id {
+// ContainsInt .
+func ContainsInt(ints []int, target int) bool {
+	for _, i := range ints {
+		if i == target {
+			return true
+		}
+	}
+
+	return false
+}
+
+// ContainsString .
+func ContainsString(strings []string, target string) bool {
+	for _, s := range strings {
+		if s == target {
 			return true
 		}
 	}
@@ -71,4 +83,14 @@ func LogOpen(sessionID, clientID, actionType string, actionPayload interface{}) 
 		[]string{sessionID, clientID, actionType},
 		actionPayload,
 	)
+}
+
+// ParseSID .
+func ParseSID(sid string) (string, string) {
+	parsed := strings.Split(sid, ".")
+	if len(parsed) < 2 {
+		return "", ""
+	}
+
+	return parsed[0], parsed[1]
 }

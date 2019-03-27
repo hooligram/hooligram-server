@@ -87,28 +87,47 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 		return groupCreateFailure(client, requestID, "id not in action")
 	}
 
+	if !client.IsSignedIn() {
+		return groupCreateFailure(client, requestID, "not signed in")
+	}
+
 	groupName, ok := action.Payload["group_name"].(string)
 	if !ok {
 		return groupCreateFailure(client, requestID, "group_name not in payload")
 	}
 
-	memberIDsPayload, ok := action.Payload["member_ids"].([]interface{})
+	memberSIDsPayload, ok := action.Payload["member_sids"].([]interface{})
 	if !ok {
-		return groupCreateFailure(client, requestID, "member_ids not in payload")
+		return groupCreateFailure(client, requestID, "member_sids not in payload")
 	}
 
-	memberIDs := make([]int, len(memberIDsPayload))
-
-	for i, memberID := range memberIDsPayload {
-		memberIDs[i] = int(memberID.(float64))
+	memberSIDs := make([]string, len(memberSIDsPayload))
+	for i, memberSID := range memberSIDsPayload {
+		memberSIDs[i] = memberSID.(string)
 	}
 
-	if len(memberIDs) < 2 {
+	if len(memberSIDs) < 2 {
 		return groupCreateFailure(client, requestID, "need at least two members")
 	}
 
-	if !utils.ContainsID(memberIDs, client.GetID()) {
-		return groupCreateFailure(client, requestID, "include group creator in member_ids")
+	if !utils.ContainsString(memberSIDs, client.GetSID()) {
+		return groupCreateFailure(client, requestID, "include group creator in member_sids")
+	}
+
+	memberIDs := []int{}
+	for _, memberSID := range memberSIDs {
+		countryCode, phoneNumber := utils.ParseSID(memberSID)
+		clientRow, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
+		if err != nil {
+			utils.LogBody(v2Tag, "error reading client by unique key. "+err.Error())
+			return groupCreateFailure(client, requestID, "server error")
+		}
+
+		if clientRow == nil {
+			return groupCreateFailure(client, requestID, "member not found")
+		}
+
+		memberIDs = append(memberIDs, clientRow.ID)
 	}
 
 	messageGroup, err := db.CreateMessageGroup(groupName, memberIDs)
@@ -118,7 +137,6 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 	}
 
 	recipientIDs := []int{}
-
 	for _, memberID := range memberIDs {
 		if memberID == client.GetID() {
 			continue
