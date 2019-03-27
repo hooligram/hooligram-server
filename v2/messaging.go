@@ -32,20 +32,11 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return messagingSendFailure(client, requestID, "message_group_id not in payload")
 	}
 
-	senderID, ok := action.Payload["sender_id"].(float64)
-	if !ok {
-		return messagingSendFailure(client, requestID, "sender_id not in payload")
-	}
-
-	if client.GetID() != int(senderID) {
-		return messagingSendFailure(client, requestID, "sender id mismatch")
-	}
-
-	if !db.ReadIsClientInMessageGroup(int(senderID), int(messageGroupID)) {
+	if !db.ReadIsClientInMessageGroup(int(client.GetID()), int(messageGroupID)) {
 		return messagingSendFailure(client, requestID, "sender doesn't belong to message group")
 	}
 
-	message, err := db.CreateMessage(content, int(messageGroupID), int(senderID))
+	message, err := db.CreateMessage(content, int(messageGroupID), client.GetID())
 	if err != nil {
 		utils.LogBody(v2Tag, "error creating message. "+err.Error())
 		return messagingSendFailure(client, requestID, "server error")
@@ -58,7 +49,6 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 	}
 
 	var recipientIDs = make([]int, len(messageGroupMemberIDs))
-
 	for i, recipientID := range messageGroupMemberIDs {
 		if recipientID == int(message.SenderID) {
 			continue
