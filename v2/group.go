@@ -36,13 +36,13 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 		return groupAddMemberFailure(client, requestID, "not allowed")
 	}
 
-	newMemberRow, err := db.ReadClientByUniqueKey(utils.ParseSID(newMemberSID))
+	newMemberRow, ok, err := db.ReadClientByUniqueKey(utils.ParseSID(newMemberSID))
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading new member by unique key. "+err.Error())
 		return groupAddMemberFailure(client, requestID, "server error")
 	}
 
-	if newMemberRow == nil {
+	if !ok {
 		return groupAddMemberFailure(client, requestID, "new member not found")
 	}
 
@@ -125,13 +125,13 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 	memberIDs := []int{}
 	for _, memberSID := range memberSIDs {
 		countryCode, phoneNumber := utils.ParseSID(memberSID)
-		clientRow, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
+		clientRow, ok, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
 		if err != nil {
 			utils.LogBody(v2Tag, "error reading client by unique key. "+err.Error())
 			return groupCreateFailure(client, requestID, "server error")
 		}
 
-		if clientRow == nil {
+		if !ok {
 			return groupCreateFailure(client, requestID, "member not found")
 		}
 

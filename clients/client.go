@@ -60,12 +60,12 @@ func (client *Client) IsSignedIn() bool {
 
 // Register .
 func (client *Client) Register(countryCode, phoneNumber string) (bool, error) {
-	clientRow, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
+	clientRow, ok, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
 	if err != nil {
 		return false, err
 	}
 
-	if clientRow == nil {
+	if !ok {
 		clientRow, err = db.CreateClient(countryCode, phoneNumber)
 		if err != nil {
 			return false, err
@@ -87,12 +87,12 @@ func (client *Client) SignIn(
 	phoneNumber string,
 	verificationCode string,
 ) (bool, error) {
-	row, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
+	row, ok, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
 	if err != nil {
 		return false, err
 	}
 
-	if row == nil {
+	if !ok {
 		return false, nil
 	}
 
