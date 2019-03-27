@@ -18,6 +18,10 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return messagingSendFailure(client, requestID, "id not in action")
 	}
 
+	if !client.IsSignedIn() {
+		return messagingSendFailure(client, requestID, "not signed in")
+	}
+
 	content, ok := action.Payload["content"].(string)
 	if !ok {
 		return messagingSendFailure(client, requestID, "content not in payload")
@@ -28,20 +32,11 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return messagingSendFailure(client, requestID, "message_group_id not in payload")
 	}
 
-	senderID, ok := action.Payload["sender_id"].(float64)
-	if !ok {
-		return messagingSendFailure(client, requestID, "sender_id not in payload")
-	}
-
-	if client.GetID() != int(senderID) {
-		return messagingSendFailure(client, requestID, "sender id mismatch")
-	}
-
-	if !db.ReadIsClientInMessageGroup(int(senderID), int(messageGroupID)) {
+	if !db.ReadIsClientInMessageGroup(int(client.GetID()), int(messageGroupID)) {
 		return messagingSendFailure(client, requestID, "sender doesn't belong to message group")
 	}
 
-	message, err := db.CreateMessage(content, int(messageGroupID), int(senderID))
+	message, err := db.CreateMessage(content, int(messageGroupID), client.GetID())
 	if err != nil {
 		utils.LogBody(v2Tag, "error creating message. "+err.Error())
 		return messagingSendFailure(client, requestID, "server error")
@@ -54,7 +49,6 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 	}
 
 	var recipientIDs = make([]int, len(messageGroupMemberIDs))
-
 	for i, recipientID := range messageGroupMemberIDs {
 		if recipientID == int(message.SenderID) {
 			continue
@@ -86,6 +80,10 @@ func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Actio
 	requestID := action.ID
 	if requestID == "" {
 		return messagingDeliverSuccessFailure(client, requestID, "id not in action")
+	}
+
+	if !client.IsSignedIn() {
+		return messagingDeliverSuccessFailure(client, requestID, "not signed in")
 	}
 
 	messageID, ok := action.Payload["message_id"].(float64)

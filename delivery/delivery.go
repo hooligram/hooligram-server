@@ -33,7 +33,7 @@ func DeliverMessage() {
 		recipientIDs := messageDelivery.RecipientIDs
 
 		for _, client := range clients.GetSignedInClients() {
-			if !utils.ContainsID(recipientIDs, client.GetID()) {
+			if !utils.ContainsInt(recipientIDs, client.GetID()) {
 				continue
 			}
 
@@ -52,7 +52,7 @@ func DeliverMessageGroup() {
 		recipientIDs := messageGroupDelivery.RecipientIDs
 
 		for _, client := range clients.GetSignedInClients() {
-			if !utils.ContainsID(recipientIDs, client.GetID()) {
+			if !utils.ContainsInt(recipientIDs, client.GetID()) {
 				continue
 			}
 

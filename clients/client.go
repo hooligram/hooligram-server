@@ -15,12 +15,18 @@ type Client struct {
 
 	id         int
 	isSignedIn bool
+	sid        string
 	lock       sync.Mutex
 }
 
 // GetID .
 func (client *Client) GetID() int {
 	return client.id
+}
+
+// GetSID .
+func (client *Client) GetSID() string {
+	return client.sid
 }
 
 // GetVerificationCode .
@@ -96,6 +102,7 @@ func (client *Client) SignIn(
 
 	client.id = row.ID
 	client.isSignedIn = true
+	client.sid = row.CountryCode + "." + row.PhoneNumber
 	return true, nil
 }
 

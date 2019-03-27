@@ -11,24 +11,29 @@ type MessageGroup struct {
 	DateCreated string
 }
 
-// MemberIDs .
-func (messageGroup *MessageGroup) MemberIDs() ([]int, error) {
+// MemberSIDs .
+func (messageGroup *MessageGroup) MemberSIDs() ([]string, error) {
 	rows, err := instance.Query(`
-		SELECT member_id FROM message_group_member WHERE message_group_id = ?;
+		SELECT client.country_code, client.phone_number
+		FROM message_group_member
+			JOIN client ON message_group_member.member_id = client.id
+		WHERE message_group_id = ?;
 	`, messageGroup.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	memberIDs := []int{}
+	memberSIDs := []string{}
 
 	for rows.Next() {
-		var memberID int
-		rows.Scan(&memberID)
-		memberIDs = append(memberIDs, memberID)
+		var countryCode string
+		var phoneNumber string
+		rows.Scan(&countryCode, &phoneNumber)
+		sid := countryCode + "." + phoneNumber
+		memberSIDs = append(memberSIDs, sid)
 	}
 
-	return memberIDs, nil
+	return memberSIDs, nil
 }
 
 ////////////
