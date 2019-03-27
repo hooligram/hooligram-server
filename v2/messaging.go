@@ -27,9 +27,9 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return messagingSendFailure(client, requestID, "content not in payload")
 	}
 
-	messageGroupID, ok := action.Payload["message_group_id"].(float64)
+	messageGroupID, ok := action.Payload["group_id"].(float64)
 	if !ok {
-		return messagingSendFailure(client, requestID, "message_group_id not in payload")
+		return messagingSendFailure(client, requestID, "group_id not in payload")
 	}
 
 	if !db.ReadIsClientInMessageGroup(int(client.GetID()), int(messageGroupID)) {
