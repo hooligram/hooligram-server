@@ -70,16 +70,6 @@ func GroupDeliverRequest(messageGroupID int) *Action {
 	}
 }
 
-// GroupDeliverSuccessFailure .
-func GroupDeliverSuccessFailure(errors []string) *Action {
-	return constructFailureAction(constants.GroupDeliverSuccessFailure, errors)
-}
-
-// GroupDeliverSuccessSuccess .
-func GroupDeliverSuccessSuccess() *Action {
-	return constructEmptyAction(constants.GroupDeliverSuccessSuccess)
-}
-
 /////////////////
 // GROUP_LEAVE //
 /////////////////

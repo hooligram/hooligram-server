@@ -164,31 +164,6 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 	return success
 }
 
-////////////////////////////////////
-// HANDLER: GROUP_DELIVER_SUCCESS //
-////////////////////////////////////
-
-func handleGroupDeliverSuccess(client *clients.Client, action *actions.Action) *actions.Action {
-	requestID := action.ID
-	if requestID == "" {
-		return groupDeliverSuccessFailure(client, requestID, "id not in action")
-	}
-
-	if !client.IsSignedIn() {
-		return groupDeliverSuccessFailure(client, requestID, "not signed in")
-	}
-
-	_, ok := action.Payload["message_group_id"].(float64)
-	if !ok {
-		return groupDeliverSuccessFailure(client, requestID, "message_group_id not in payload")
-	}
-
-	success := actions.GroupDeliverSuccessSuccess()
-	success.ID = requestID
-	client.WriteJSON(success)
-	return success
-}
-
 //////////////////////////////////
 // HANDLER: GROUP_LEAVE_REQUEST //
 //////////////////////////////////
@@ -265,13 +240,6 @@ func groupAddMemberFailure(client *clients.Client, actionID, err string) *action
 
 func groupCreateFailure(client *clients.Client, actionID, err string) *actions.Action {
 	failure := actions.GroupCreateFailure([]string{err})
-	failure.ID = actionID
-	client.WriteJSON(failure)
-	return failure
-}
-
-func groupDeliverSuccessFailure(client *clients.Client, actionID, err string) *actions.Action {
-	failure := actions.GroupDeliverSuccessFailure([]string{err})
 	failure.ID = actionID
 	client.WriteJSON(failure)
 	return failure

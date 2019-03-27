@@ -72,55 +72,12 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 	return success
 }
 
-////////////////////////////////////////
-// HANDLER: MESSAGING_DELIVER_SUCCESS //
-////////////////////////////////////////
-
-func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Action) *actions.Action {
-	requestID := action.ID
-	if requestID == "" {
-		return messagingDeliverSuccessFailure(client, requestID, "id not in action")
-	}
-
-	if !client.IsSignedIn() {
-		return messagingDeliverSuccessFailure(client, requestID, "not signed in")
-	}
-
-	messageID, ok := action.Payload["message_id"].(float64)
-	if !ok {
-		return messagingDeliverSuccessFailure(client, requestID, "message_id not in payload")
-	}
-
-	recipientID := client.GetID()
-	ok, err := db.UpdateReceiptDateDelivered(int(messageID), recipientID)
-	if err != nil {
-		utils.LogBody(v2Tag, "error updating receipt date delivered. "+err.Error())
-		return messagingDeliverSuccessFailure(client, requestID, "server error")
-	}
-
-	if !ok {
-		return messagingDeliverSuccessFailure(client, requestID, "not allowed")
-	}
-
-	success := actions.MessagingDeliverSuccessSuccess(int(messageID))
-	success.ID = requestID
-	client.WriteJSON(success)
-	return success
-}
-
 ////////////
 // HELPER //
 ////////////
 
 func messagingSendFailure(client *clients.Client, actionID, err string) *actions.Action {
 	failure := actions.MessagingSendFailure([]string{err})
-	failure.ID = actionID
-	client.WriteJSON(failure)
-	return failure
-}
-
-func messagingDeliverSuccessFailure(client *clients.Client, actionID, err string) *actions.Action {
-	failure := actions.MessagingDeliverSuccessFailure([]string{err})
 	failure.ID = actionID
 	client.WriteJSON(failure)
 	return failure

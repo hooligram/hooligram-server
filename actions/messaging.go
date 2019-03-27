@@ -24,22 +24,6 @@ func MessagingDeliverRequest(message *db.Message) *Action {
 	}
 }
 
-// MessagingDeliverSuccessFailure .
-func MessagingDeliverSuccessFailure(errors []string) *Action {
-	return constructFailureAction(constants.MessagingDeliverSuccessFailure, errors)
-}
-
-// MessagingDeliverSuccessSuccess .
-func MessagingDeliverSuccessSuccess(messageID int) *Action {
-	payload := make(map[string]interface{})
-	payload["message_id"] = messageID
-
-	return &Action{
-		Payload: payload,
-		Type:    constants.MessagingDeliverSuccessSuccess,
-	}
-}
-
 ////////////////////
 // MESSAGING_SEND //
 ////////////////////
