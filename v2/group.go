@@ -19,7 +19,6 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 	}
 
 	if !client.IsSignedIn() {
-		utils.LogBody(v2Tag, "client not signed in")
 		return groupAddMemberFailure(client, requestID, "not signed in")
 	}
 
@@ -166,6 +165,10 @@ func handleGroupDeliverSuccess(client *clients.Client, action *actions.Action) *
 		return groupDeliverSuccessFailure(client, requestID, "id not in action")
 	}
 
+	if !client.IsSignedIn() {
+		return groupDeliverSuccessFailure(client, requestID, "not signed in")
+	}
+
 	_, ok := action.Payload["message_group_id"].(float64)
 	if !ok {
 		return groupDeliverSuccessFailure(client, requestID, "message_group_id not in payload")
@@ -188,7 +191,6 @@ func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *ac
 	}
 
 	if !client.IsSignedIn() {
-		utils.LogBody(v2Tag, "client not signed in")
 		return groupLeaveFailure(client, requestID, "not signed in")
 	}
 

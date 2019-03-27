@@ -18,6 +18,10 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return messagingSendFailure(client, requestID, "id not in action")
 	}
 
+	if !client.IsSignedIn() {
+		return messagingSendFailure(client, requestID, "not signed in")
+	}
+
 	content, ok := action.Payload["content"].(string)
 	if !ok {
 		return messagingSendFailure(client, requestID, "content not in payload")
@@ -86,6 +90,10 @@ func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Actio
 	requestID := action.ID
 	if requestID == "" {
 		return messagingDeliverSuccessFailure(client, requestID, "id not in action")
+	}
+
+	if !client.IsSignedIn() {
+		return messagingDeliverSuccessFailure(client, requestID, "not signed in")
 	}
 
 	messageID, ok := action.Payload["message_id"].(float64)
