@@ -1,6 +1,10 @@
 package db
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/hooligram/hooligram-server/utils"
+)
 
 // Message .
 type Message struct {
@@ -9,6 +13,17 @@ type Message struct {
 	MessageGroupID int
 	SenderID       int
 	DateCreated    string
+}
+
+// SenderSID .
+func (message *Message) SenderSID() string {
+	clientRow, err := ReadClientByID(message.SenderID)
+	if err != nil {
+		utils.LogInfo(dbTag, "error reading client by id. "+err.Error())
+		return ""
+	}
+
+	return clientRow.CountryCode + "." + clientRow.PhoneNumber
 }
 
 ////////////
