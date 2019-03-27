@@ -4,6 +4,7 @@ const actionsTag = "actions"
 
 // Action .
 type Action struct {
+	ID      string                 `json:"id"`
 	Payload map[string]interface{} `json:"payload"`
 	Type    string                 `json:"type"`
 }

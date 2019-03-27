@@ -1,9 +1,9 @@
 package clients
 
 import (
-	"math/rand"
-
 	"github.com/gorilla/websocket"
+	"github.com/hooligram/hooligram-server/constants"
+	"github.com/hooligram/hooligram-server/utils"
 )
 
 const clientsTag = "clients"
@@ -56,12 +56,5 @@ func Remove(conn *websocket.Conn) error {
 }
 
 func generateSessionID() string {
-	var runes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	sessionID := make([]rune, 8)
-
-	for i := range sessionID {
-		sessionID[i] = runes[rand.Intn(len(runes))]
-	}
-
-	return string(sessionID)
+	return utils.GenerateRandomString(constants.ActionIDLength)
 }

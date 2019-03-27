@@ -104,3 +104,7 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		utils.LogClose(client.SessionID, strconv.Itoa(client.GetID()), result.Type, result.Payload)
 	}
 }
+
+func generateRandomActionID() string {
+	return utils.GenerateRandomString(constants.ActionIDLength)
+}
