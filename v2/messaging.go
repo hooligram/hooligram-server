@@ -8,6 +8,35 @@ import (
 	"github.com/hooligram/hooligram-server/utils"
 )
 
+////////////////////////////////////////
+// HANDLER: MESSAGING_DELIVER_SUCCESS //
+////////////////////////////////////////
+
+func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Action) *actions.Action {
+	requestID := action.ID
+	if requestID == "" {
+		return nil
+	}
+
+	if !client.IsSignedIn() {
+		return nil
+	}
+
+	messageID, ok := action.Payload["message_id"].(float64)
+	if !ok {
+		return nil
+	}
+
+	recipientID := client.GetID()
+	ok, err := db.UpdateReceiptDateDelivered(int(messageID), recipientID)
+	if err != nil {
+		utils.LogBody(v2Tag, "error updating receipt date delivered. "+err.Error())
+		return nil
+	}
+
+	return nil
+}
+
 /////////////////////////////////////
 // HANDLER: MESSAGING_SEND_REQUEST //
 /////////////////////////////////////

@@ -84,6 +84,8 @@ func V2(w http.ResponseWriter, r *http.Request) {
 			result = handleGroupCreateRequest(client, &action)
 		case constants.GroupLeaveRequest:
 			result = handleGroupLeaveRequest(client, &action)
+		case constants.MessagingDeliverSuccess:
+			result = handleMessagingDeliverSuccess(client, &action)
 		case constants.MessagingSendRequest:
 			result = handleMessagingSendRequest(client, &action)
 		case constants.VerificationRequestCodeRequest:
