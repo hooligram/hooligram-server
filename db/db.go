@@ -13,7 +13,9 @@ const dbTag = "db"
 
 var (
 	dbName     = os.Getenv("MYSQL_DB_NAME")
+	dbHost     = os.Getenv("MYSQL_HOST")
 	dbPassword = os.Getenv("MYSQL_PASSWORD")
+	dbPort     = os.Getenv("MYSQL_PORT")
 	dbUsername = os.Getenv("MYSQL_USERNAME")
 	instance   *sql.DB
 )
@@ -31,14 +33,26 @@ func init() {
 		utils.LogFatal(dbTag, "MYSQL_PASSWORD not set")
 	}
 
+	if dbHost == "" {
+		dbHost = "127.0.0.1"
+	}
+
+	if dbPort == "" {
+		dbPort = "3306"
+	}
+
 	if dbName == "" {
 		utils.LogFatal(dbTag, "MYSQL_DB_NAME not set")
 	}
 
 	var err error
-	instance, err = sql.Open("mysql", dbUsername+":"+dbPassword+"@/"+dbName)
+	dataSource := dbUsername + ":" + dbPassword + "@tcp(" + dbHost + ":" + dbPort + ")/" + dbName
+	utils.LogInfo(dbTag, "opening mysql db connection to "+dataSource+"...")
+	instance, err = sql.Open("mysql", dataSource)
 	if err != nil {
 		utils.LogFatal(dbTag, "error opening mysql connection. "+err.Error())
+	} else {
+		utils.LogInfo(dbTag, "connected to "+dataSource)
 	}
 
 	err = instance.Ping()
