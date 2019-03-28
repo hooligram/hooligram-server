@@ -18,7 +18,8 @@
 10. `export MYSQL_DB_NAME=hooligram`
 11. `export MYSQL_USERNAME=<username>`
 12. `export MYSQL_PASSWORD=<password>`
-13. `go build && ./hooligram-server`
+13. `govendor build`
+14. `./hooligram-server`
 
 ### MySQL DB
 
