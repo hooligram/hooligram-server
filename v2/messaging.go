@@ -8,6 +8,35 @@ import (
 	"github.com/hooligram/hooligram-server/utils"
 )
 
+////////////////////////////////////////
+// HANDLER: MESSAGING_DELIVER_SUCCESS //
+////////////////////////////////////////
+
+func handleMessagingDeliverSuccess(client *clients.Client, action *actions.Action) *actions.Action {
+	requestID := action.ID
+	if requestID == "" {
+		return nil
+	}
+
+	if !client.IsSignedIn() {
+		return nil
+	}
+
+	messageID, ok := action.Payload["message_id"].(float64)
+	if !ok {
+		return nil
+	}
+
+	recipientID := client.GetID()
+	ok, err := db.UpdateReceiptDateDelivered(int(messageID), recipientID)
+	if err != nil {
+		utils.LogBody(v2Tag, "error updating receipt date delivered. "+err.Error())
+		return nil
+	}
+
+	return nil
+}
+
 /////////////////////////////////////
 // HANDLER: MESSAGING_SEND_REQUEST //
 /////////////////////////////////////
@@ -48,22 +77,13 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return messagingSendFailure(client, requestID, "server error")
 	}
 
-	var recipientIDs = make([]int, len(messageGroupMemberIDs))
-	for i, recipientID := range messageGroupMemberIDs {
-		if recipientID == int(message.SenderID) {
-			continue
-		}
-
-		recipientIDs[i] = recipientID
-	}
-
-	for _, recipientID := range recipientIDs {
-		db.CreateReceipt(message.ID, recipientID)
+	for _, memberID := range messageGroupMemberIDs {
+		db.CreateReceipt(message.ID, memberID)
 	}
 
 	delivery.GetMessageDeliveryChan() <- &delivery.MessageDelivery{
 		Message:      message,
-		RecipientIDs: recipientIDs,
+		RecipientIDs: messageGroupMemberIDs,
 	}
 
 	success := actions.MessagingSendSuccess(message.ID)
