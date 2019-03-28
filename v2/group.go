@@ -58,15 +58,6 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 		return groupAddMemberFailure(client, requestID, "server error")
 	}
 
-	recipientIDs := []int{}
-	for _, memberID := range memberIDs {
-		if memberID == client.GetID() {
-			continue
-		}
-
-		recipientIDs = append(recipientIDs, memberID)
-	}
-
 	messageGroup, err := db.ReadMessageGroupByID(int(groupID))
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading message group. "+err.Error())
@@ -75,7 +66,7 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 
 	messageGroupDelivery := delivery.MessageGroupDelivery{
 		MessageGroup: messageGroup,
-		RecipientIDs: recipientIDs,
+		RecipientIDs: memberIDs,
 	}
 	delivery.GetMessageGroupDeliveryChan() <- &messageGroupDelivery
 
@@ -144,18 +135,9 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 		return groupCreateFailure(client, requestID, "server error")
 	}
 
-	recipientIDs := []int{}
-	for _, memberID := range memberIDs {
-		if memberID == client.GetID() {
-			continue
-		}
-
-		recipientIDs = append(recipientIDs, memberID)
-	}
-
 	delivery.GetMessageGroupDeliveryChan() <- &delivery.MessageGroupDelivery{
 		MessageGroup: messageGroup,
-		RecipientIDs: recipientIDs,
+		RecipientIDs: memberIDs,
 	}
 
 	success := actions.GroupCreateSuccess(messageGroup.ID)
