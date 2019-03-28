@@ -48,22 +48,13 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return messagingSendFailure(client, requestID, "server error")
 	}
 
-	var recipientIDs = make([]int, len(messageGroupMemberIDs))
-	for i, recipientID := range messageGroupMemberIDs {
-		if recipientID == int(message.SenderID) {
-			continue
-		}
-
-		recipientIDs[i] = recipientID
-	}
-
-	for _, recipientID := range recipientIDs {
-		db.CreateReceipt(message.ID, recipientID)
+	for _, memberID := range messageGroupMemberIDs {
+		db.CreateReceipt(message.ID, memberID)
 	}
 
 	delivery.GetMessageDeliveryChan() <- &delivery.MessageDelivery{
 		Message:      message,
-		RecipientIDs: recipientIDs,
+		RecipientIDs: messageGroupMemberIDs,
 	}
 
 	success := actions.MessagingSendSuccess(message.ID)
