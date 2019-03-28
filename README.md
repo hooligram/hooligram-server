@@ -33,10 +33,16 @@
 
 ## Deployment
 
+### AWS EC2
+
 1. Setup AWS EC2 instance (Ubuntu 18)
 2. Copy `hooligram-developer.pem` to project *root*
 3. `export IP_ADDR=<aws-ec2-ip-address>`
 4. `./deploy.sh`
+
+### Heroku
+
+1. `git push heroku master`
 
 ## Logging
 
