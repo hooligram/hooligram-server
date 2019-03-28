@@ -1,0 +1,31 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "8M/GlM986QSn9urcuFsQMvUFgSI=",
+			"path": "github.com/go-sql-driver/mysql",
+			"revision": "fd197cdcfae0c686792ef5399f223f5b66a30b6b",
+			"revisionTime": "2018-10-31T14:07:16Z"
+		},
+		{
+			"checksumSHA1": "5NQxGXStdEEDvT6IPRtJk7Qg+GQ=",
+			"path": "github.com/gorilla/mux",
+			"revision": "521ea7b17d02faf8d3afea6737573942ceac59c5",
+			"revisionTime": "2018-10-24T02:08:00Z"
+		},
+		{
+			"checksumSHA1": "EFilcRi6b0Bf3nckKo3UbeqoW50=",
+			"path": "github.com/gorilla/websocket",
+			"revision": "95ba29eb981bbb27d92e1f70bf8a1949452d926b",
+			"revisionTime": "2018-12-06T07:02:39Z"
+		},
+		{
+			"checksumSHA1": "sPSVArCpw6ka/ePvh1YLdXNx88Y=",
+			"path": "github.com/hooligram/kifu",
+			"revision": "8f645b38af1269a6019f3347d3ead508d6c7ba11",
+			"revisionTime": "2019-03-24T04:35:51Z"
+		}
+	],
+	"rootPath": "github.com/hooligram/hooligram-server"
+}
