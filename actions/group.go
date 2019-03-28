@@ -32,7 +32,7 @@ func GroupCreateFailure(errors []string) *Action {
 // GroupCreateSuccess .
 func GroupCreateSuccess(groupID int) *Action {
 	payload := make(map[string]interface{})
-	payload["message_group_id"] = groupID
+	payload["group_id"] = groupID
 
 	return &Action{
 		Payload: payload,
@@ -60,24 +60,14 @@ func GroupDeliverRequest(messageGroupID int) *Action {
 
 	payload := make(map[string]interface{})
 	payload["date_created"] = messageGroup.DateCreated
+	payload["group_id"] = messageGroup.ID
 	payload["group_name"] = messageGroup.Name
 	payload["member_sids"] = memberSIDs
-	payload["message_group_id"] = messageGroup.ID
 
 	return &Action{
 		Payload: payload,
 		Type:    constants.GroupDeliverRequest,
 	}
-}
-
-// GroupDeliverSuccessFailure .
-func GroupDeliverSuccessFailure(errors []string) *Action {
-	return constructFailureAction(constants.GroupDeliverSuccessFailure, errors)
-}
-
-// GroupDeliverSuccessSuccess .
-func GroupDeliverSuccessSuccess() *Action {
-	return constructEmptyAction(constants.GroupDeliverSuccessSuccess)
 }
 
 /////////////////

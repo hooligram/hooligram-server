@@ -27,12 +27,12 @@ func CreateClient(countryCode, phoneNumber string) (*Client, error) {
 		return nil, errors.New("phone number should only contain digits")
 	}
 
-	client, err := ReadClientByUniqueKey(countryCode, phoneNumber)
+	client, ok, err := ReadClientByUniqueKey(countryCode, phoneNumber)
 	if err != nil {
 		return nil, err
 	}
 
-	if client != nil {
+	if ok {
 		return client, nil
 	}
 
@@ -92,18 +92,18 @@ func ReadClientByID(id int) (*Client, error) {
 }
 
 // ReadClientByUniqueKey .
-func ReadClientByUniqueKey(countryCode, phoneNumber string) (*Client, error) {
+func ReadClientByUniqueKey(countryCode, phoneNumber string) (*Client, bool, error) {
 	rows, err := instance.Query(`
 		SELECT id, verification_code, date_created
 		FROM client
 		WHERE country_code = ? AND phone_number = ?;
 	`, countryCode, phoneNumber)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if !rows.Next() {
-		return nil, nil
+		return nil, false, nil
 	}
 
 	var id int
@@ -119,7 +119,7 @@ func ReadClientByUniqueKey(countryCode, phoneNumber string) (*Client, error) {
 		DateCreated:      dateCreated,
 	}
 
-	return client, nil
+	return client, true, nil
 }
 
 // ReadClientVerificationCode .

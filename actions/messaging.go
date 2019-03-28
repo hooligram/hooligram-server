@@ -14,29 +14,13 @@ func MessagingDeliverRequest(message *db.Message) *Action {
 	payload := make(map[string]interface{})
 	payload["content"] = message.Content
 	payload["date_created"] = message.DateCreated
-	payload["message_group_id"] = message.MessageGroupID
+	payload["group_id"] = message.MessageGroupID
 	payload["message_id"] = message.ID
 	payload["sender_sid"] = message.SenderSID()
 
 	return &Action{
 		Payload: payload,
 		Type:    constants.MessagingDeliverRequest,
-	}
-}
-
-// MessagingDeliverSuccessFailure .
-func MessagingDeliverSuccessFailure(errors []string) *Action {
-	return constructFailureAction(constants.MessagingDeliverSuccessFailure, errors)
-}
-
-// MessagingDeliverSuccessSuccess .
-func MessagingDeliverSuccessSuccess(messageID int) *Action {
-	payload := make(map[string]interface{})
-	payload["message_id"] = messageID
-
-	return &Action{
-		Payload: payload,
-		Type:    constants.MessagingDeliverSuccessSuccess,
 	}
 }
 

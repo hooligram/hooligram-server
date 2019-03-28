@@ -35,13 +35,13 @@ func handleAuthorizationSignInRequest(
 		return authorizationSignInFailure(client, requestID, "verification_code not in payload")
 	}
 
-	clientRow, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
+	clientRow, ok, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading client by unique key. "+err.Error())
 		return authorizationSignInFailure(client, requestID, "server error")
 	}
 
-	if clientRow == nil || clientRow.VerificationCode != verificationCode {
+	if !ok || clientRow.VerificationCode != verificationCode {
 		return authorizationSignInFailure(client, requestID, "not verified")
 	}
 

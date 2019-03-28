@@ -36,13 +36,13 @@ func handleGroupAddMemberRequest(client *clients.Client, action *actions.Action)
 		return groupAddMemberFailure(client, requestID, "not allowed")
 	}
 
-	newMemberRow, err := db.ReadClientByUniqueKey(utils.ParseSID(newMemberSID))
+	newMemberRow, ok, err := db.ReadClientByUniqueKey(utils.ParseSID(newMemberSID))
 	if err != nil {
 		utils.LogBody(v2Tag, "error reading new member by unique key. "+err.Error())
 		return groupAddMemberFailure(client, requestID, "server error")
 	}
 
-	if newMemberRow == nil {
+	if !ok {
 		return groupAddMemberFailure(client, requestID, "new member not found")
 	}
 
@@ -125,13 +125,13 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 	memberIDs := []int{}
 	for _, memberSID := range memberSIDs {
 		countryCode, phoneNumber := utils.ParseSID(memberSID)
-		clientRow, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
+		clientRow, ok, err := db.ReadClientByUniqueKey(countryCode, phoneNumber)
 		if err != nil {
 			utils.LogBody(v2Tag, "error reading client by unique key. "+err.Error())
 			return groupCreateFailure(client, requestID, "server error")
 		}
 
-		if clientRow == nil {
+		if !ok {
 			return groupCreateFailure(client, requestID, "member not found")
 		}
 
@@ -159,31 +159,6 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 	}
 
 	success := actions.GroupCreateSuccess(messageGroup.ID)
-	success.ID = requestID
-	client.WriteJSON(success)
-	return success
-}
-
-////////////////////////////////////
-// HANDLER: GROUP_DELIVER_SUCCESS //
-////////////////////////////////////
-
-func handleGroupDeliverSuccess(client *clients.Client, action *actions.Action) *actions.Action {
-	requestID := action.ID
-	if requestID == "" {
-		return groupDeliverSuccessFailure(client, requestID, "id not in action")
-	}
-
-	if !client.IsSignedIn() {
-		return groupDeliverSuccessFailure(client, requestID, "not signed in")
-	}
-
-	_, ok := action.Payload["message_group_id"].(float64)
-	if !ok {
-		return groupDeliverSuccessFailure(client, requestID, "message_group_id not in payload")
-	}
-
-	success := actions.GroupDeliverSuccessSuccess()
 	success.ID = requestID
 	client.WriteJSON(success)
 	return success
@@ -265,13 +240,6 @@ func groupAddMemberFailure(client *clients.Client, actionID, err string) *action
 
 func groupCreateFailure(client *clients.Client, actionID, err string) *actions.Action {
 	failure := actions.GroupCreateFailure([]string{err})
-	failure.ID = actionID
-	client.WriteJSON(failure)
-	return failure
-}
-
-func groupDeliverSuccessFailure(client *clients.Client, actionID, err string) *actions.Action {
-	failure := actions.GroupDeliverSuccessFailure([]string{err})
 	failure.ID = actionID
 	client.WriteJSON(failure)
 	return failure

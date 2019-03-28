@@ -14,21 +14,17 @@ const (
 	GroupCreateRequest = "GROUP_CREATE_REQUEST"
 	GroupCreateSuccess = "GROUP_CREATE_SUCCESS"
 
-	GroupDeliverFailure        = "GROUP_DELIVER_FAILURE"
-	GroupDeliverRequest        = "GROUP_DELIVER_REQUEST"
-	GroupDeliverSuccess        = "GROUP_DELIVER_SUCCESS"
-	GroupDeliverSuccessFailure = "GROUP_DELIVER_SUCCESS_FAILURE"
-	GroupDeliverSuccessSuccess = "GROUP_DELIVER_SUCCESS_SUCCESS"
+	GroupDeliverFailure = "GROUP_DELIVER_FAILURE"
+	GroupDeliverRequest = "GROUP_DELIVER_REQUEST"
+	GroupDeliverSuccess = "GROUP_DELIVER_SUCCESS"
 
 	GroupLeaveFailure = "GROUP_LEAVE_FAILURE"
 	GroupLeaveRequest = "GROUP_LEAVE_REQUEST"
 	GroupLeaveSuccess = "GROUP_LEAVE_SUCCESS"
 
-	MessagingDeliverFailure        = "MESSAGING_DELIVER_FAILURE"
-	MessagingDeliverRequest        = "MESSAGING_DELIVER_REQUEST"
-	MessagingDeliverSuccess        = "MESSAGING_DELIVER_SUCCESS"
-	MessagingDeliverSuccessFailure = "MESSAGING_DELIVER_SUCCESS_FAILURE"
-	MessagingDeliverSuccessSuccess = "MESSAGING_DELIVER_SUCCESS_SUCCESS"
+	MessagingDeliverFailure = "MESSAGING_DELIVER_FAILURE"
+	MessagingDeliverRequest = "MESSAGING_DELIVER_REQUEST"
+	MessagingDeliverSuccess = "MESSAGING_DELIVER_SUCCESS"
 
 	MessagingSendFailure = "MESSAGING_SEND_FAILURE"
 	MessagingSendRequest = "MESSAGING_SEND_REQUEST"
