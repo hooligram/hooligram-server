@@ -60,7 +60,7 @@ func init() {
 		utils.LogFatal(dbTag, "error pinging mysql. "+err.Error())
 	}
 
-	_, err = instance.Exec("SET GLOBAL time_zone = '+00:00';")
+	_, err = instance.Exec("SET time_zone = '+00:00';")
 	if err != nil {
 		utils.LogFatal(dbTag, "error setting global time zone. "+err.Error())
 	}
