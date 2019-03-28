@@ -46,9 +46,12 @@ func init() {
 		utils.LogFatal(dbTag, "error pinging mysql. "+err.Error())
 	}
 
-	instance.Exec("SET GLOBAL time_zone = '+00:00';")
+	_, err = instance.Exec("SET GLOBAL time_zone = '+00:00';")
+	if err != nil {
+		utils.LogFatal(dbTag, "error setting global time zone. "+err.Error())
+	}
 
-	instance.Exec(`
+	_, err = instance.Exec(`
 		CREATE TABLE IF NOT EXISTS client (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 			country_code VARCHAR ( 64 ) NOT NULL,
@@ -59,8 +62,11 @@ func init() {
 			UNIQUE KEY ( country_code, phone_number )
 		);
 	`)
+	if err != nil {
+		utils.LogFatal(dbTag, "error creating client table. "+err.Error())
+	}
 
-	instance.Exec(`
+	_, err = instance.Exec(`
 		CREATE TABLE IF NOT EXISTS message_group (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 			name VARCHAR ( 32 ) NOT NULL,
@@ -68,8 +74,11 @@ func init() {
 			PRIMARY KEY ( id )
 		);
 	`)
+	if err != nil {
+		utils.LogFatal(dbTag, "error creating message_group table. "+err.Error())
+	}
 
-	instance.Exec(`
+	_, err = instance.Exec(`
 		CREATE TABLE IF NOT EXISTS message (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 			content TEXT NOT NULL,
@@ -85,8 +94,11 @@ func init() {
 				ON UPDATE CASCADE
 		);
 	`)
+	if err != nil {
+		utils.LogFatal(dbTag, "error creating message table")
+	}
 
-	instance.Exec(`
+	_, err = instance.Exec(`
 		CREATE TABLE IF NOT EXISTS message_group_member (
 			message_group_id INT UNSIGNED NOT NULL,
 			member_id INT UNSIGNED NOT NULL,
@@ -100,8 +112,11 @@ func init() {
 				ON UPDATE CASCADE
 		);
 	`)
+	if err != nil {
+		utils.LogFatal(dbTag, "error creating message_group_member table")
+	}
 
-	instance.Exec(`
+	_, err = instance.Exec(`
 		CREATE TABLE IF NOT EXISTS receipt (
 			message_id INT UNSIGNED NOT NULL,
 			recipient_id INT UNSIGNED NOT NULL,
@@ -116,6 +131,9 @@ func init() {
 				ON UPDATE CASCADE
 		);
 	`)
+	if err != nil {
+		utils.LogFatal(dbTag, "error creating receipt table")
+	}
 }
 
 // ReadClientMessageGroupIDs .
