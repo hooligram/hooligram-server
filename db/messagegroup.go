@@ -22,6 +22,7 @@ func (messageGroup *MessageGroup) MemberSIDs() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	memberSIDs := []string{}
 
@@ -87,6 +88,7 @@ func CreateMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		errorMsg := "message_group `%v` has been added to the database but "
@@ -118,6 +120,7 @@ func ReadMessageGroupByID(id int) (*MessageGroup, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		return nil, nil
