@@ -6,6 +6,10 @@ const (
 	AuthorizationSignInRequest = "AUTHORIZATION_SIGN_IN_REQUEST"
 	AuthorizationSignInSuccess = "AUTHORIZATION_SIGN_IN_SUCCESS"
 
+	ConnKeepAliveFailure = "CONN_KEEP_ALIVE_FAILURE"
+	ConnKeepAliveRequest = "CONN_KEEP_ALIVE_REQUEST"
+	ConnKeepAliveSuccess = "CONN_KEEP_ALIVE_SUCCESS"
+
 	GroupAddMemberFailure = "GROUP_ADD_MEMBER_FAILURE"
 	GroupAddMemberRequest = "GROUP_ADD_MEMBER_REQUEST"
 	GroupAddMemberSuccess = "GROUP_ADD_MEMBER_SUCCESS"

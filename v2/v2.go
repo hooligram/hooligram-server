@@ -78,6 +78,8 @@ func V2(w http.ResponseWriter, r *http.Request) {
 		switch action.Type {
 		case constants.AuthorizationSignInRequest:
 			result = handleAuthorizationSignInRequest(client, &action)
+		case constants.ConnKeepAliveRequest:
+			result = handleConnKeepAliveRequest(client, &action)
 		case constants.GroupAddMemberRequest:
 			result = handleGroupAddMemberRequest(client, &action)
 		case constants.GroupCreateRequest:
