@@ -164,6 +164,7 @@ func ReadClientMessageGroupIDs(clientID int) ([]int, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	groupIDs := []int{}
 
@@ -186,6 +187,7 @@ func ReadUndeliveredMessages(recipientID int) ([]*Message, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var messages []*Message
 

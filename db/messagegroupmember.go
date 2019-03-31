@@ -48,6 +48,7 @@ func ReadMessageGroupMemberIDs(messageGroupID int) ([]int, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var memberIDs []int
 
@@ -69,6 +70,7 @@ func ReadIsClientInMessageGroup(clientID, messageGroupID int) bool {
 	if err != nil {
 		return false
 	}
+	defer rows.Close()
 
 	return rows.Next()
 }

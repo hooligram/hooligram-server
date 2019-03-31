@@ -65,10 +65,10 @@ func ReadClientByID(id int) (*Client, error) {
 	rows, err := instance.Query(`
 		SELECT country_code, phone_number, verification_code, date_created FROM client WHERE id = ?;
 	`, id)
-
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		return nil, nil
@@ -101,6 +101,7 @@ func ReadClientByUniqueKey(countryCode, phoneNumber string) (*Client, bool, erro
 	if err != nil {
 		return nil, false, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		return nil, false, nil
@@ -130,6 +131,7 @@ func ReadClientVerificationCode(clientID int) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		return "", nil

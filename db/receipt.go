@@ -6,9 +6,10 @@ package db
 
 // CreateReceipt .
 func CreateReceipt(messageID, recipientID int) error {
-	_, err := instance.Query(`
+	rows, err := instance.Query(`
 		INSERT INTO receipt ( message_id, recipient_id ) VALUES ( ?, ? );
 	`, messageID, recipientID)
+	defer rows.Close()
 
 	return err
 }

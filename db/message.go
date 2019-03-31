@@ -35,7 +35,6 @@ func CreateMessage(content string, messageGroupID, senderID int) (*Message, erro
 	result, err := instance.Exec(`
 		INSERT INTO message ( content, message_group_id, sender_id ) VALUES ( ?, ?, ? );
 	`, content, messageGroupID, senderID)
-
 	if err != nil {
 		return nil, errors.New("failed to create message")
 	}
@@ -44,10 +43,10 @@ func CreateMessage(content string, messageGroupID, senderID int) (*Message, erro
 	rows, err := instance.Query(`
 		SELECT date_created FROM message WHERE id = ?;
 	`, id)
-
 	if err != nil {
 		return nil, errors.New("failed to find message")
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		return nil, errors.New("can't find message")
