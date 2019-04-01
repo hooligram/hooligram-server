@@ -56,5 +56,5 @@ func Remove(conn *websocket.Conn) error {
 }
 
 func generateSessionID() string {
-	return utils.GenerateRandomString(constants.ActionIDLength)
+	return utils.GenerateRandomString(constants.SessionIDLength)
 }
