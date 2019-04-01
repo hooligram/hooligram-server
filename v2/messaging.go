@@ -41,6 +41,11 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return messagingSendFailure(client, "not signed in")
 	}
 
+	actionID, ok := action.Payload["action_id"].(string)
+	if !ok {
+		return messagingSendFailure(client, "action_id not in payload")
+	}
+
 	content, ok := action.Payload["content"].(string)
 	if !ok {
 		return messagingSendFailure(client, "content not in payload")
@@ -76,7 +81,7 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		RecipientIDs: messageGroupMemberIDs,
 	}
 
-	success := actions.MessagingSendSuccess(message.ID)
+	success := actions.MessagingSendSuccess(message.ID, actionID)
 	client.WriteJSON(success)
 	return success
 }

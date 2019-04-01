@@ -34,8 +34,9 @@ func MessagingSendFailure(errors []string) *Action {
 }
 
 // MessagingSendSuccess .
-func MessagingSendSuccess(messageID int) *Action {
+func MessagingSendSuccess(messageID int, actionID string) *Action {
 	payload := make(map[string]interface{})
+	payload["action_id"] = actionID
 	payload["message_id"] = messageID
 
 	return &Action{
