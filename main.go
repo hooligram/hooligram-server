@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/hooligram/hooligram-server/delivery"
+	"github.com/hooligram/hooligram-server/notifications"
 	"github.com/hooligram/hooligram-server/v2"
 )
 
@@ -25,6 +26,7 @@ func main() {
 
 	go delivery.DeliverMessage()
 	go delivery.DeliverMessageGroup()
+	go notifications.HandleNotification()
 
 	http.ListenAndServe(":"+port, router)
 }
