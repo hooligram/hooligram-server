@@ -21,6 +21,18 @@ func main() {
 		log.Fatal(fmt.Sprintf("[%v] PORT not set", mainTag))
 	}
 
+	fcmmessaginghost := os.Getenv("FCM_MESSAGING_HOST")
+	if fcmmessaginghost == "" {
+		log.Fatal(fmt.Sprintf("[%v] FCM_MESSAGING_HOST not set", mainTag))
+	}
+
+	fcmmessagingauthkey := os.Getenv("FCM_MESSAGING_AUTHKEY")
+	if fcmmessagingauthkey == "" {
+		log.Fatal(fmt.Sprintf("[%v] FCM_MESSAGING_AUTHKEY not set", mainTag))
+	}
+
+	notifications.Init(fcmmessagingauthkey, fcmmessaginghost)
+
 	router := mux.NewRouter()
 	router.HandleFunc("/v2", v2.V2)
 
