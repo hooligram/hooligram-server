@@ -79,6 +79,11 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 		return groupCreateFailure(client, "not signed in")
 	}
 
+	actionID, ok := action.Payload["action_id"].(string)
+	if !ok {
+		return groupCreateFailure(client, "action_id not in payload")
+	}
+
 	groupName, ok := action.Payload["group_name"].(string)
 	if !ok {
 		return groupCreateFailure(client, "group_name not in payload")
@@ -129,7 +134,7 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 		RecipientIDs: memberIDs,
 	}
 
-	success := actions.GroupCreateSuccess(messageGroup.ID)
+	success := actions.GroupCreateSuccess(messageGroup.ID, actionID)
 	client.WriteJSON(success)
 	return success
 }
