@@ -32,7 +32,6 @@ func GroupCreateFailure(actionID string, errors []string) *Action {
 // GroupCreateSuccess .
 func GroupCreateSuccess(actionID string, groupID int) *Action {
 	payload := make(map[string]interface{})
-	payload["action_id"] = actionID
 	payload["group_id"] = groupID
 
 	return &Action{

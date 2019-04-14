@@ -46,11 +46,6 @@ func handleMessagingSendRequest(client *clients.Client, action *actions.Action) 
 		return messagingSendFailure(client, actionID, "not signed in")
 	}
 
-	actionID, ok := action.Payload["action_id"].(string)
-	if !ok {
-		return messagingSendFailure(client, actionID, "action_id not in payload")
-	}
-
 	content, ok := action.Payload["content"].(string)
 	if !ok {
 		return messagingSendFailure(client, actionID, "content not in payload")
