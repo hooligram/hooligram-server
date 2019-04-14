@@ -7,11 +7,11 @@ import "github.com/hooligram/hooligram-server/constants"
 ///////////////////////////
 
 // AuthorizationSignInFailure .
-func AuthorizationSignInFailure(errors []string) *Action {
-	return constructFailureAction(constants.AuthorizationSignInFailure, errors)
+func AuthorizationSignInFailure(actionID string, errors []string) *Action {
+	return constructFailureAction(actionID, constants.AuthorizationSignInFailure, errors)
 }
 
 // AuthorizationSignInSuccess .
-func AuthorizationSignInSuccess() *Action {
-	return constructEmptyAction(constants.AuthorizationSignInSuccess)
+func AuthorizationSignInSuccess(actionID string) *Action {
+	return constructEmptyAction(actionID, constants.AuthorizationSignInSuccess)
 }

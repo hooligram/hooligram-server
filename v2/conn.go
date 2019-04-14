@@ -10,7 +10,14 @@ import (
 //////////////////////////////////////
 
 func handleConnKeepAliveRequest(client *clients.Client, action *actions.Action) *actions.Action {
-	success := actions.ConnKeepAliveSuccess()
+	actionID := action.ID
+	if actionID == "" {
+		failure := actions.ConnKeepAliveFailure(actionID)
+		client.WriteJSON(failure)
+		return failure
+	}
+
+	success := actions.ConnKeepAliveSuccess(actionID)
 	client.WriteJSON(success)
 	return success
 }

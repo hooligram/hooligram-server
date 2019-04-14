@@ -8,7 +8,12 @@ import (
 // CONN_KEEP_ALIVE //
 /////////////////////
 
+// ConnKeepAliveFailure .
+func ConnKeepAliveFailure(actionID string) *Action {
+	return constructEmptyAction(actionID, constants.ConnKeepAliveFailure)
+}
+
 // ConnKeepAliveSuccess .
-func ConnKeepAliveSuccess() *Action {
-	return constructEmptyAction(constants.ConnKeepAliveSuccess)
+func ConnKeepAliveSuccess(actionID string) *Action {
+	return constructEmptyAction(actionID, constants.ConnKeepAliveSuccess)
 }

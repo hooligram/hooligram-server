@@ -49,7 +49,7 @@ func init() {
 	dataSource := dbUsername + ":" + dbPassword + "@tcp(" + dbHost + ":" + dbPort + ")/" + dbName
 	dataSource += "?charset=utf8mb4"
 	dataSource += "&collation=utf8mb4_unicode_ci"
-	utils.LogInfo(dbTag, "opening mysql db connection to "+dataSource+"...")
+	utils.LogInfo(dbTag, "opening mysql db connection to "+dataSource)
 	instance, err = sql.Open("mysql", dataSource)
 	if err != nil {
 		utils.LogFatal(dbTag, "error opening mysql connection. "+err.Error())
