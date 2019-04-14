@@ -11,13 +11,13 @@ import (
 //////////////////////
 
 // GroupAddMemberFailure .
-func GroupAddMemberFailure(errors []string) *Action {
-	return constructFailureAction(constants.GroupAddMemberFailure, errors)
+func GroupAddMemberFailure(actionID string, errors []string) *Action {
+	return constructFailureAction(actionID, constants.GroupAddMemberFailure, errors)
 }
 
 // GroupAddMemberSuccess .
-func GroupAddMemberSuccess() *Action {
-	return constructEmptyAction(constants.GroupAddMemberSuccess)
+func GroupAddMemberSuccess(actionID string) *Action {
+	return constructEmptyAction(actionID, constants.GroupAddMemberSuccess)
 }
 
 //////////////////
@@ -25,17 +25,18 @@ func GroupAddMemberSuccess() *Action {
 //////////////////
 
 // GroupCreateFailure .
-func GroupCreateFailure(errors []string) *Action {
-	return constructFailureAction(constants.GroupCreateFailure, errors)
+func GroupCreateFailure(actionID string, errors []string) *Action {
+	return constructFailureAction(actionID, constants.GroupCreateFailure, errors)
 }
 
 // GroupCreateSuccess .
-func GroupCreateSuccess(groupID int, actionID string) *Action {
+func GroupCreateSuccess(actionID string, groupID int) *Action {
 	payload := make(map[string]interface{})
 	payload["action_id"] = actionID
 	payload["group_id"] = groupID
 
 	return &Action{
+		ID:      actionID,
 		Payload: payload,
 		Type:    constants.GroupCreateSuccess,
 	}
@@ -46,7 +47,7 @@ func GroupCreateSuccess(groupID int, actionID string) *Action {
 ///////////////////
 
 // GroupDeliverRequest .
-func GroupDeliverRequest(messageGroupID int) *Action {
+func GroupDeliverRequest(actionID string, messageGroupID int) *Action {
 	messageGroup, err := db.ReadMessageGroupByID(messageGroupID)
 	if err != nil {
 		utils.LogInfo(actionsTag, "error reading message group by id. "+err.Error())
@@ -66,6 +67,7 @@ func GroupDeliverRequest(messageGroupID int) *Action {
 	payload["member_sids"] = memberSIDs
 
 	return &Action{
+		ID:      actionID,
 		Payload: payload,
 		Type:    constants.GroupDeliverRequest,
 	}
@@ -76,11 +78,11 @@ func GroupDeliverRequest(messageGroupID int) *Action {
 /////////////////
 
 // GroupLeaveFailure .
-func GroupLeaveFailure(errors []string) *Action {
-	return constructFailureAction(constants.GroupLeaveFailure, errors)
+func GroupLeaveFailure(actionID string, errors []string) *Action {
+	return constructFailureAction(actionID, constants.GroupLeaveFailure, errors)
 }
 
 // GroupLeaveSuccess .
-func GroupLeaveSuccess() *Action {
-	return constructEmptyAction(constants.GroupLeaveSuccess)
+func GroupLeaveSuccess(actionID string) *Action {
+	return constructEmptyAction(actionID, constants.GroupLeaveSuccess)
 }

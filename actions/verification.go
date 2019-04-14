@@ -7,13 +7,13 @@ import "github.com/hooligram/hooligram-server/constants"
 ///////////////////////////////
 
 // VerificationRequestCodeFailure .
-func VerificationRequestCodeFailure(errors []string) *Action {
-	return constructFailureAction(constants.VerificationRequestCodeFailure, errors)
+func VerificationRequestCodeFailure(actionID string, errors []string) *Action {
+	return constructFailureAction(actionID, constants.VerificationRequestCodeFailure, errors)
 }
 
 // VerificationRequestCodeSuccess .
-func VerificationRequestCodeSuccess() *Action {
-	return constructEmptyAction(constants.VerificationRequestCodeSuccess)
+func VerificationRequestCodeSuccess(actionID string) *Action {
+	return constructEmptyAction(actionID, constants.VerificationRequestCodeSuccess)
 }
 
 //////////////////////////////
@@ -21,11 +21,11 @@ func VerificationRequestCodeSuccess() *Action {
 //////////////////////////////
 
 // VerificationSubmitCodeFailure .
-func VerificationSubmitCodeFailure(errors []string) *Action {
-	return constructFailureAction(constants.VerificationSubmitCodeFailure, errors)
+func VerificationSubmitCodeFailure(actionID string, errors []string) *Action {
+	return constructFailureAction(actionID, constants.VerificationSubmitCodeFailure, errors)
 }
 
 // VerificationSubmitCodeSuccess .
-func VerificationSubmitCodeSuccess() *Action {
-	return constructEmptyAction(constants.VerificationSubmitCodeSuccess)
+func VerificationSubmitCodeSuccess(actionID string) *Action {
+	return constructEmptyAction(actionID, constants.VerificationSubmitCodeSuccess)
 }

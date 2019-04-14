@@ -10,7 +10,7 @@ import (
 ///////////////////////
 
 // MessagingDeliverRequest .
-func MessagingDeliverRequest(message *db.Message) *Action {
+func MessagingDeliverRequest(actionID string, message *db.Message) *Action {
 	payload := make(map[string]interface{})
 	payload["content"] = message.Content
 	payload["date_created"] = message.DateCreated
@@ -19,6 +19,7 @@ func MessagingDeliverRequest(message *db.Message) *Action {
 	payload["sender_sid"] = message.SenderSID()
 
 	return &Action{
+		ID:      actionID,
 		Payload: payload,
 		Type:    constants.MessagingDeliverRequest,
 	}
@@ -29,17 +30,18 @@ func MessagingDeliverRequest(message *db.Message) *Action {
 ////////////////////
 
 // MessagingSendFailure .
-func MessagingSendFailure(errors []string) *Action {
-	return constructFailureAction(constants.MessagingSendFailure, errors)
+func MessagingSendFailure(actionID string, errors []string) *Action {
+	return constructFailureAction(actionID, constants.MessagingSendFailure, errors)
 }
 
 // MessagingSendSuccess .
-func MessagingSendSuccess(messageID int, actionID string) *Action {
+func MessagingSendSuccess(actionID string, messageID int) *Action {
 	payload := make(map[string]interface{})
 	payload["action_id"] = actionID
 	payload["message_id"] = messageID
 
 	return &Action{
+		ID:      actionID,
 		Payload: payload,
 		Type:    constants.MessagingSendSuccess,
 	}
