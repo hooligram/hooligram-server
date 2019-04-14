@@ -3,6 +3,7 @@ package v2
 import (
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
+	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
 	"github.com/hooligram/hooligram-server/utils"
 )
@@ -69,12 +70,14 @@ func handleAuthorizationSignInRequest(
 	}
 
 	for _, messageGroupID := range messageGroupIDs {
+		actionID := utils.GenerateRandomString(constants.ActionIDLength)
 		request := actions.GroupDeliverRequest(actionID, messageGroupID)
 		client.WriteJSON(request)
 	}
 
 	for _, undeliveredMessage := range undeliveredMessages {
-		request := actions.MessagingDeliverRequest(undeliveredMessage)
+		actionID := utils.GenerateRandomString(constants.ActionIDLength)
+		request := actions.MessagingDeliverRequest(actionID, undeliveredMessage)
 		client.WriteJSON(request)
 	}
 
