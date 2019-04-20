@@ -8,6 +8,7 @@ import (
 type MessageGroup struct {
 	ID          int
 	Name        string
+	Type        int
 	DateCreated string
 }
 
@@ -115,7 +116,7 @@ func CreateMessageGroup(groupName string, memberIDs []int) (*MessageGroup, error
 // ReadMessageGroupByID .
 func ReadMessageGroupByID(id int) (*MessageGroup, error) {
 	rows, err := instance.Query(`
-		SELECT id, name, date_created FROM message_group WHERE id = ?;
+		SELECT id, name, type, date_created FROM message_group WHERE id = ?;
 	`, id)
 	if err != nil {
 		return nil, err
@@ -127,12 +128,14 @@ func ReadMessageGroupByID(id int) (*MessageGroup, error) {
 	}
 
 	var name string
+	var groupType int
 	var dateCreated string
-	rows.Scan(&id, &name, &dateCreated)
+	rows.Scan(&id, &name, &groupType, &dateCreated)
 
 	messageGroup := MessageGroup{
 		ID:          id,
 		Name:        name,
+		Type:        groupType,
 		DateCreated: dateCreated,
 	}
 
@@ -142,6 +145,12 @@ func ReadMessageGroupByID(id int) (*MessageGroup, error) {
 ////////////
 // UPDATE //
 ////////////
+
+// UpdateMessageGroupType .
+func UpdateMessageGroupType(groupID, groupType int) error {
+	_, err := instance.Exec(`UPDATE message_group SET type = ? WHERE id = ?;`, groupType, groupID)
+	return err
+}
 
 ////////////
 // DELETE //

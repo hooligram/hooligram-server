@@ -63,6 +63,7 @@ func GroupDeliverRequest(actionID string, messageGroupID int) *Action {
 	payload["date_created"] = messageGroup.DateCreated
 	payload["group_id"] = messageGroup.ID
 	payload["group_name"] = messageGroup.Name
+	payload["group_type"] = messageGroup.Type
 	payload["member_sids"] = memberSIDs
 
 	return &Action{
