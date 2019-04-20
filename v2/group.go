@@ -129,19 +129,47 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 		memberIDs = append(memberIDs, clientRow.ID)
 	}
 
-	messageGroup, err := db.CreateMessageGroup(groupName, memberIDs)
-	if err != nil {
-		utils.LogBody(v2Tag, "error creating message group. "+err.Error())
-		return groupCreateFailure(client, actionID, "server error")
-	}
-
+	var messageGroup *db.MessageGroup
 	groupType := constants.Standard
 
-	if len(memberSIDs) == 2 {
+	if len(memberIDs) == 2 {
 		groupType = constants.DirectMessage
-		err := db.UpdateMessageGroupType(messageGroup.ID, groupType)
+		groupID, err := db.ReadDirectMessageGroupID(memberIDs[0], memberIDs[1])
 		if err != nil {
-			utils.LogBody(v2Tag, "error updating message group type. "+err.Error())
+			utils.LogBody(v2Tag, "error reading direct message group id. "+err.Error())
+			return groupCreateFailure(client, actionID, "server error")
+		}
+
+		if groupID == 0 {
+			messageGroup, err = db.CreateMessageGroup(groupName, memberIDs)
+			if err != nil {
+				utils.LogBody(v2Tag, "error creating message group. "+err.Error())
+				return groupCreateFailure(client, actionID, "server error")
+			}
+
+			err = db.CreateDirectMessage(messageGroup.ID, memberIDs[0], memberIDs[1])
+			if err != nil {
+				utils.LogBody(v2Tag, "error creating direct message. "+err.Error())
+				return groupCreateFailure(client, actionID, "server error")
+			}
+
+			err = db.UpdateMessageGroupType(messageGroup.ID, groupType)
+			if err != nil {
+				utils.LogBody(v2Tag, "error updating message group type. "+err.Error())
+			}
+		} else {
+			messageGroup, err = db.ReadMessageGroupByID(groupID)
+			if err != nil {
+				utils.LogBody(v2Tag, "error reading message group by id. "+err.Error())
+				return groupCreateFailure(client, actionID, "server error")
+			}
+		}
+	} else {
+		var err error
+		messageGroup, err = db.CreateMessageGroup(groupName, memberIDs)
+		if err != nil {
+			utils.LogBody(v2Tag, "error creating message group. "+err.Error())
+			return groupCreateFailure(client, actionID, "server error")
 		}
 	}
 
