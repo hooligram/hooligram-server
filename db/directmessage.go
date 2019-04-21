@@ -40,6 +40,7 @@ func ReadDirectMessageGroupID(memberAID, memberBID int) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		return 0, nil
@@ -58,6 +59,7 @@ func ReadIsDirectMessage(groupID int) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer rows.Close()
 
 	if !rows.Next() {
 		return false, nil
