@@ -122,16 +122,53 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 		}
 
 		if !ok {
-			return groupCreateFailure(client, actionID, "member not found")
+			newClient, err := db.CreateClient(countryCode, phoneNumber)
+			if err != nil {
+				utils.LogBody(v2Tag, "error creating client. "+err.Error())
+				return groupCreateFailure(client, actionID, "server error")
+			}
+			memberIDs = append(memberIDs, newClient.ID)
+		} else {
+			memberIDs = append(memberIDs, clientRow.ID)
 		}
 
-		memberIDs = append(memberIDs, clientRow.ID)
 	}
 
-	messageGroup, err := db.CreateMessageGroup(groupName, memberIDs)
-	if err != nil {
-		utils.LogBody(v2Tag, "error creating message group. "+err.Error())
-		return groupCreateFailure(client, actionID, "server error")
+	var messageGroup *db.MessageGroup
+
+	if len(memberIDs) == 2 {
+		groupID, err := db.ReadDirectMessageGroupID(memberIDs[0], memberIDs[1])
+		if err != nil {
+			utils.LogBody(v2Tag, "error reading direct message group id. "+err.Error())
+			return groupCreateFailure(client, actionID, "server error")
+		}
+
+		if groupID == 0 {
+			messageGroup, err = db.CreateMessageGroup(groupName, memberIDs)
+			if err != nil {
+				utils.LogBody(v2Tag, "error creating message group. "+err.Error())
+				return groupCreateFailure(client, actionID, "server error")
+			}
+
+			err = db.CreateDirectMessage(messageGroup.ID, memberIDs[0], memberIDs[1])
+			if err != nil {
+				utils.LogBody(v2Tag, "error creating direct message. "+err.Error())
+				return groupCreateFailure(client, actionID, "server error")
+			}
+		} else {
+			messageGroup, err = db.ReadMessageGroupByID(groupID)
+			if err != nil {
+				utils.LogBody(v2Tag, "error reading message group by id. "+err.Error())
+				return groupCreateFailure(client, actionID, "server error")
+			}
+		}
+	} else {
+		var err error
+		messageGroup, err = db.CreateMessageGroup(groupName, memberIDs)
+		if err != nil {
+			utils.LogBody(v2Tag, "error creating message group. "+err.Error())
+			return groupCreateFailure(client, actionID, "server error")
+		}
 	}
 
 	delivery.GetMessageGroupDeliveryChan() <- &delivery.MessageGroupDelivery{

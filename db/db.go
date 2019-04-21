@@ -150,6 +150,27 @@ func init() {
 	if err != nil {
 		utils.LogFatal(dbTag, "error creating receipt table")
 	}
+
+	_, err = instance.Exec(`
+		CREATE TABLE IF NOT EXISTS direct_message (
+			message_group_id INT UNSIGNED NOT NULL,
+			member_a_id INT UNSIGNED NOT NULL,
+			member_b_id INT UNSIGNED NOT NULL,
+			PRIMARY KEY ( message_group_id, member_a_id, member_b_id ),
+			CONSTRAINT FOREIGN KEY ( message_group_id ) REFERENCES message_group ( id )
+				ON DELETE CASCADE
+				ON UPDATE CASCADE,
+			CONSTRAINT FOREIGN KEY ( member_a_id ) REFERENCES client ( id )
+				ON DELETE CASCADE
+				ON UPDATE CASCADE,
+			CONSTRAINT FOREIGN KEY ( member_b_id ) REFERENCES client ( id )
+				ON DELETE CASCADE
+				ON UPDATE CASCADE
+		);
+	`)
+	if err != nil {
+		utils.LogFatal(dbTag, "error creating direct message table")
+	}
 }
 
 // ReadClientMessageGroupIDs .

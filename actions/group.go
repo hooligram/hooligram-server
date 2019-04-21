@@ -53,6 +53,17 @@ func GroupDeliverRequest(actionID string, messageGroupID int) *Action {
 		return &Action{}
 	}
 
+	isDirectMessage, err := db.ReadIsDirectMessage(messageGroup.ID)
+	if err != nil {
+		utils.LogInfo(actionsTag, "error reading is direct message. "+err.Error())
+		return &Action{}
+	}
+	groupType := constants.Standard
+
+	if isDirectMessage {
+		groupType = constants.DirectMessage
+	}
+
 	memberSIDs, err := messageGroup.MemberSIDs()
 	if err != nil {
 		utils.LogInfo(actionsTag, "error getting message group member sids. "+err.Error())
@@ -63,6 +74,7 @@ func GroupDeliverRequest(actionID string, messageGroupID int) *Action {
 	payload["date_created"] = messageGroup.DateCreated
 	payload["group_id"] = messageGroup.ID
 	payload["group_name"] = messageGroup.Name
+	payload["group_type"] = groupType
 	payload["member_sids"] = memberSIDs
 
 	return &Action{
