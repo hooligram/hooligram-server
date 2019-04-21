@@ -122,10 +122,16 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 		}
 
 		if !ok {
-			return groupCreateFailure(client, actionID, "member not found")
+			newClient, err := db.CreateClient(countryCode, phoneNumber)
+			if err != nil {
+				utils.LogBody(v2Tag, "error creating client. "+err.Error())
+				return groupCreateFailure(client, actionID, "server error")
+			}
+			memberIDs = append(memberIDs, newClient.ID)
+		} else {
+			memberIDs = append(memberIDs, clientRow.ID)
 		}
 
-		memberIDs = append(memberIDs, clientRow.ID)
 	}
 
 	var messageGroup *db.MessageGroup
