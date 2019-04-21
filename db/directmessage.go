@@ -50,6 +50,24 @@ func ReadDirectMessageGroupID(memberAID, memberBID int) (int, error) {
 	return messageGroupID, nil
 }
 
+// ReadIsDirectMessage .
+func ReadIsDirectMessage(groupID int) (bool, error) {
+	rows, err := instance.Query(`
+		SELECT COUNT(*) FROM direct_message WHERE message_group_id = ?;
+	`, groupID)
+	if err != nil {
+		return false, err
+	}
+
+	if !rows.Next() {
+		return false, nil
+	}
+
+	var count int
+	rows.Scan(&count)
+	return count > 0, nil
+}
+
 ////////////
 // UPDATE //
 ////////////

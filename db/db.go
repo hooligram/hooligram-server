@@ -86,7 +86,6 @@ func init() {
 		CREATE TABLE IF NOT EXISTS message_group (
 			id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 			name VARCHAR ( 32 ) NOT NULL,
-			type INT DEFAULT 0,
 			date_created DATETIME DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY ( id )
 		);

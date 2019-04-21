@@ -3,7 +3,6 @@ package v2
 import (
 	"github.com/hooligram/hooligram-server/actions"
 	"github.com/hooligram/hooligram-server/clients"
-	"github.com/hooligram/hooligram-server/constants"
 	"github.com/hooligram/hooligram-server/db"
 	"github.com/hooligram/hooligram-server/delivery"
 	"github.com/hooligram/hooligram-server/utils"
@@ -130,10 +129,8 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 	}
 
 	var messageGroup *db.MessageGroup
-	groupType := constants.Standard
 
 	if len(memberIDs) == 2 {
-		groupType = constants.DirectMessage
 		groupID, err := db.ReadDirectMessageGroupID(memberIDs[0], memberIDs[1])
 		if err != nil {
 			utils.LogBody(v2Tag, "error reading direct message group id. "+err.Error())
@@ -152,11 +149,6 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 				utils.LogBody(v2Tag, "error creating direct message. "+err.Error())
 				return groupCreateFailure(client, actionID, "server error")
 			}
-
-			err = db.UpdateMessageGroupType(messageGroup.ID, groupType)
-			if err != nil {
-				utils.LogBody(v2Tag, "error updating message group type. "+err.Error())
-			}
 		} else {
 			messageGroup, err = db.ReadMessageGroupByID(groupID)
 			if err != nil {
@@ -173,7 +165,6 @@ func handleGroupCreateRequest(client *clients.Client, action *actions.Action) *a
 		}
 	}
 
-	messageGroup.Type = groupType
 	delivery.GetMessageGroupDeliveryChan() <- &delivery.MessageGroupDelivery{
 		MessageGroup: messageGroup,
 		RecipientIDs: memberIDs,
