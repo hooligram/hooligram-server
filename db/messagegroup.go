@@ -146,3 +146,9 @@ func ReadMessageGroupByID(id int) (*MessageGroup, error) {
 ////////////
 // DELETE //
 ////////////
+
+// DeleteMessageGroup .
+func DeleteMessageGroup(id int) error {
+	_, err := instance.Exec("DELETE FROM message_group WHERE id = ?;", id)
+	return err
+}

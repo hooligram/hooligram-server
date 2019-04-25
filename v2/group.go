@@ -238,6 +238,13 @@ func handleGroupLeaveRequest(client *clients.Client, action *actions.Action) *ac
 	}
 	delivery.GetMessageGroupDeliveryChan() <- &messageGroupDelivery
 
+	if len(recipientIDs) < 2 {
+		err := db.DeleteMessageGroup(messageGroup.ID)
+		if err != nil {
+			utils.LogInfo(v2Tag, "error deleting message group. "+err.Error())
+		}
+	}
+
 	success := actions.GroupLeaveSuccess(actionID)
 	client.WriteJSON(success)
 	return success

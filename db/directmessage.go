@@ -37,7 +37,7 @@ func ReadDirectMessageGroupID(memberAID, memberBID int) (int, error) {
 			AND
 			member_a_id <> member_b_id
 		LIMIT 1;
-	`, memberAID, memberBID)
+	`, memberAID, memberBID, memberAID, memberBID)
 	if err != nil {
 		return 0, err
 	}
