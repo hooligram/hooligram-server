@@ -19,11 +19,6 @@ func CreateDirectMessage(groupID, memberAID, memberBID int) error {
 		return err
 	}
 
-	_, err = stmt.Exec(groupID, memberBID, memberAID)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -35,8 +30,14 @@ func CreateDirectMessage(groupID, memberAID, memberBID int) error {
 func ReadDirectMessageGroupID(memberAID, memberBID int) (int, error) {
 	rows, err := instance.Query(`
 		SELECT message_group_id FROM direct_message
-		WHERE member_a_id = ? AND member_b_id = ?;
-	`, memberAID, memberBID)
+		WHERE
+			member_a_id in (?, ?)
+			AND
+			member_b_id in (?, ?)
+			AND
+			member_a_id <> member_b_id
+		LIMIT 1;
+	`, memberAID, memberBID, memberAID, memberBID)
 	if err != nil {
 		return 0, err
 	}
